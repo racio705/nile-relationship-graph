@@ -1,0 +1,1319 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#121316">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="尼罗河惨案">
+<title>尼罗河惨案 · 人物关系网</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<style>
+:root{
+  --bg:#121316; --panel:#1a1c21; --panel2:#22252b; --line:#3a3e46; --line2:#2a2d33;
+  --txt:#eceef1; --dim:#a4aab4; --mute:#737984;
+  --accent:#ffd426; --red:#ff4d5e;
+  --dock:64px; --sab:env(safe-area-inset-bottom,0px); --sat:env(safe-area-inset-top,0px);
+  --sans:"Bahnschrift","Segoe UI","PingFang SC","HarmonyOS Sans SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{
+  background:radial-gradient(ellipse at 45% 42%,#1e2127 0%,#14161a 55%,#0d0e10 100%);
+  color:var(--txt);font:15px/1.7 var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased;
+  -webkit-text-size-adjust:100%;overscroll-behavior:none;
+}
+button{font:inherit;color:inherit;cursor:pointer}
+#graph{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+#graph.panning{cursor:grabbing}
+
+/* ---------- 顶栏 ---------- */
+#top{position:fixed;left:0;right:0;top:0;z-index:10;display:flex;align-items:center;gap:10px;pointer-events:none;
+  padding:calc(10px + var(--sat)) 14px 22px;background:linear-gradient(180deg,rgba(8,9,11,.92),rgba(8,9,11,0))}
+#top>*{pointer-events:auto}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand h1{margin:0;font-size:18px;line-height:1.15;letter-spacing:.12em;font-weight:800;white-space:nowrap}
+.brand small{display:block;margin-top:2px;font-size:10.5px;letter-spacing:.3em;color:var(--dim)}
+#helpBtn{margin-left:auto;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:rgba(20,22,26,.9);font-weight:700;color:var(--dim)}
+
+/* ---------- 底部操作栏 ---------- */
+#dock{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;gap:8px;padding:8px 10px calc(8px + var(--sab));
+  background:rgba(20,22,26,.97);border-top:1px solid var(--line)}
+.dk{flex:1;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:0 4px;
+  border:1px solid var(--line);border-radius:12px;background:var(--panel2);font-size:12px;color:var(--dim);line-height:1.2}
+.dk svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.dk:active{transform:scale(.97)}
+.dk.main{flex:2.3;flex-direction:row;gap:10px;border-color:var(--accent);background:var(--accent);color:#17181b;text-align:left;padding:0 12px}
+.dk.main b{display:block;font-size:15px;letter-spacing:.04em}
+.dk.main i{display:block;font-style:normal;font-size:11.5px;opacity:.78}
+.dk.main .ring{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.14);font-weight:800;font-size:12px;letter-spacing:-.02em}
+.dk.pulse{animation:pulse 1.6s ease-in-out 3}
+@keyframes pulse{50%{box-shadow:0 0 0 6px rgba(255,212,38,.28)}}
+
+/* ---------- 底部卡片（人物 / 关系 / 各种弹层） ---------- */
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;flex-direction:column;max-height:84vh;max-height:84dvh;
+  background:var(--panel);border-top:2px solid var(--accent);border-radius:18px 18px 0 0;
+  transform:translateY(106%);visibility:hidden;transition:transform .36s cubic-bezier(.2,.9,.25,1),visibility 0s linear .36s;padding-bottom:var(--sab);
+  box-shadow:0 -12px 40px rgba(0,0,0,.45)}
+.sheet.open{transform:none;visibility:visible;transition:transform .36s cubic-bezier(.2,.9,.25,1),visibility 0s}
+#detail{z-index:22;bottom:calc(var(--dock) + var(--sab) + 14px);max-height:46vh;max-height:46dvh;padding-bottom:0}
+#detail.tall{max-height:78vh;max-height:78dvh}
+.grab{flex:none;height:22px;display:grid;place-items:center;cursor:pointer}
+.grab i{width:44px;height:4px;border-radius:2px;background:var(--line)}
+.sbody{position:relative;overflow:auto;-webkit-overflow-scrolling:touch;padding:0 18px 20px;min-height:0;flex:1}
+.sbody::-webkit-scrollbar{width:5px}.sbody::-webkit-scrollbar-thumb{background:#3a3e46}
+.shead{flex:none;display:flex;align-items:center;gap:10px;padding:14px 18px 6px}
+.shead h2{margin:0;font-size:20px;letter-spacing:.06em}
+.shead small{color:var(--dim);font-size:13px}
+.xbtn{margin-left:auto;flex:none;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:transparent;font-size:18px;line-height:1;color:var(--dim)}
+#backdrop{position:fixed;inset:0;z-index:28;background:rgba(5,6,8,.62);opacity:0;pointer-events:none;transition:opacity .3s}
+#backdrop.on{opacity:1;pointer-events:auto}
+.sheet.modal{z-index:32}
+
+.dialog{position:fixed;left:50%;top:50%;z-index:40;width:min(88vw,380px);padding:22px 20px 18px;border:1px solid var(--line);border-top:2px solid var(--accent);border-radius:16px;
+  background:var(--panel);box-shadow:0 20px 60px rgba(0,0,0,.6);transform:translate(-50%,-46%) scale(.96);opacity:0;pointer-events:none;transition:opacity .25s,transform .3s cubic-bezier(.2,.9,.25,1)}
+.dialog.open{transform:translate(-50%,-50%);opacity:1;pointer-events:auto}
+.dialog h3{margin:0 0 8px;font-size:18px}
+.dialog p{margin:0 0 16px;color:var(--dim);font-size:14.5px}
+.dialog .row{display:flex;gap:10px}
+.btn{flex:1;min-height:46px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);font-weight:700;font-size:15px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#17181b}
+.linkbtn{border:0;background:transparent;color:var(--dim);font-size:13px;text-decoration:underline;text-underline-offset:3px;padding:8px 6px}
+
+#toast{position:fixed;left:50%;bottom:calc(var(--dock) + var(--sab) + 22px);z-index:45;width:max-content;max-width:88vw;padding:10px 18px;border-radius:16px;
+  background:rgba(255,212,38,.97);color:#17181b;font-weight:700;font-size:14.5px;line-height:1.45;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.4);transform:translate(-50%,18px);opacity:0;pointer-events:none;
+  transition:opacity .3s,transform .35s cubic-bezier(.2,.9,.25,1)}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+#toast small{display:block;font-size:12.5px;font-weight:600;opacity:.8}
+
+/* ---------- 卡片内容 ---------- */
+.who{display:flex;gap:14px;align-items:center;margin:2px 0 12px;padding-right:44px}
+.who h2{margin:0;font-size:19px;line-height:1.3;letter-spacing:.02em}
+.who .en{margin-top:2px;font-size:11px;letter-spacing:.14em;color:var(--mute)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 4px}
+.chip{display:inline-block;padding:1px 10px;font-size:12.5px;border:1px solid var(--c,var(--line));color:var(--c,var(--dim));border-radius:999px}
+.chip.nick{--c:var(--accent);font-weight:700}
+.alt{margin:8px 0 0;font-size:12.5px;color:var(--mute)}
+.sec{display:flex;align-items:baseline;gap:8px;margin:18px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--line2);font-size:11px;font-weight:400;letter-spacing:.22em;color:var(--mute)}
+.sec span{font-size:14px;letter-spacing:.1em;color:var(--txt);font-weight:700}
+.sec b{margin-left:auto;font-size:12.5px;color:var(--dim);font-weight:400;letter-spacing:.04em}
+.note{margin:0 0 9px;padding-left:12px;border-left:2px solid var(--line);color:#d0d4db;font-size:15px;line-height:1.85}
+.note.fresh{border-left-color:var(--accent);color:#f5f1d8}
+.note.fresh::before{content:"新";display:inline-block;margin-right:7px;padding:0 6px;border-radius:4px;background:var(--accent);color:#17181b;font-size:11px;font-weight:800;vertical-align:1px}
+.rel{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;padding:6px 6px;border:0;border-bottom:1px solid var(--line2);background:transparent;text-align:left}
+.rel:active{background:rgba(255,255,255,.06)}
+.rel .bar{flex:none;width:3px;align-self:stretch;margin:6px 0;background:var(--c);border-radius:2px}
+.rel .nm{font-weight:700;font-size:15px;line-height:1.3}
+.rel .nm small{display:block;font-weight:400;font-size:12px;color:var(--mute)}
+.rel .ar{color:var(--dim);font-weight:400}
+.rel .lb{margin-left:auto;flex:none;font-size:12.5px;padding:1px 9px;border:1px solid var(--c);color:var(--c);border-radius:999px}
+.back{margin:0 0 10px;padding:6px 14px;border:1px solid var(--line);border-radius:999px;background:transparent;font-size:13px;color:var(--dim)}
+.pair{display:flex;align-items:center;justify-content:space-between;gap:4px;margin:4px 0 12px}
+.pn{display:flex;flex-direction:column;align-items:center;gap:2px;width:92px;padding:6px 0;border:0;border-radius:10px;background:transparent;font-size:13px;font-weight:700;text-align:center;line-height:1.3}
+.pn:active{background:rgba(255,255,255,.06)}
+.mid{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.mid .lab{padding:2px 12px;border:1px solid var(--c);color:var(--c);font-size:14px;font-weight:700;white-space:nowrap;border-radius:999px}
+.mid .ln{width:100%;height:0;border-top:2px solid var(--c)}
+.mid.harm .ln{border-top-style:dashed}.mid.rift .ln{border-top-style:dotted}
+
+/* 进度 */
+.lead{margin:2px 0 14px;color:var(--dim);font-size:14px}
+.tl{list-style:none;margin:0;padding:0}
+.tl li{position:relative;padding:0 0 16px 40px}
+.tl li::before{content:"";position:absolute;left:13px;top:26px;bottom:0;width:2px;background:var(--line2)}
+.tl li:last-child::before{display:none}
+.tl .dot{position:absolute;left:0;top:0;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;background:var(--panel2);border:1px solid var(--line);color:var(--dim)}
+.tl .done .dot{background:var(--accent);border-color:var(--accent);color:#17181b}
+.tl .cur .dot{box-shadow:0 0 0 4px rgba(255,212,38,.25)}
+.tl b{display:block;font-size:15.5px;line-height:1.4}
+.tl span.r{display:block;margin-top:2px;font-size:13.5px;color:var(--dim);line-height:1.7}
+.tl .next .dot{border-style:dashed}
+.tl .next b{color:var(--dim)}
+.tl .next .btn{margin-top:10px;width:100%}
+.mini{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:6px;padding-top:12px;border-top:1px solid var(--line2)}
+
+/* 人物速查 */
+.search{display:flex;align-items:center;gap:8px;margin:4px 0 10px;padding:0 14px;height:46px;border:1px solid var(--line);border-radius:12px;background:var(--panel2)}
+.search input{flex:1;min-width:0;height:100%;border:0;outline:0;background:transparent;color:var(--txt);font:inherit;font-size:16px}
+.search svg{width:18px;height:18px;stroke:var(--mute);fill:none;stroke-width:2;stroke-linecap:round}
+.gh{margin:14px 0 4px;font-size:12px;letter-spacing:.18em;color:var(--mute);display:flex;align-items:center;gap:8px}
+.gh::before{content:"";width:12px;height:12px;background:var(--c);clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}
+.prow{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:6px 4px;border:0;border-bottom:1px solid var(--line2);background:transparent;text-align:left}
+.prow:active{background:rgba(255,255,255,.06)}
+.prow .t{min-width:0}
+.prow .t b{display:block;font-size:16px;line-height:1.3}
+.prow .t i{display:block;font-style:normal;font-size:12.5px;color:var(--dim);line-height:1.4}
+.prow .t u{text-decoration:none;color:var(--accent);font-weight:700}
+.prow .new{margin-left:auto;flex:none;padding:0 7px;border-radius:4px;background:var(--accent);color:#17181b;font-size:11px;font-weight:800}
+.empty{padding:24px 0;text-align:center;color:var(--mute)}
+
+/* 图例 */
+.krow{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:4px 4px;border:0;border-bottom:1px solid var(--line2);background:transparent;text-align:left}
+.krow .sw{flex:none;width:34px;height:0;border-top:3px solid var(--c)}
+.krow[data-k=harm] .sw{border-top-style:dashed}.krow[data-k=rift] .sw{border-top-style:dotted}
+.krow b{font-size:15px}.krow i{display:block;font-style:normal;font-size:12.5px;color:var(--dim)}
+.krow .st{margin-left:auto;font-size:12px;color:var(--mute)}
+.krow[aria-pressed=false]{opacity:.4}
+.grow{display:flex;align-items:center;gap:10px;padding:8px 4px;font-size:14px}
+.grow::before{content:"";flex:none;width:16px;height:16px;background:var(--c);clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}
+
+/* 首次进入 */
+.intro h2{margin:2px 0 4px;font-size:24px;letter-spacing:.1em}
+.intro .en{margin:0 0 14px;font-size:10.5px;letter-spacing:.28em;color:var(--mute)}
+.steps{list-style:none;margin:0 0 16px;padding:0;counter-reset:s}
+.steps li{position:relative;padding:8px 0 8px 40px;color:#d0d4db;font-size:15px;line-height:1.7}
+.steps li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:8px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#17181b;font-weight:800;font-size:13px}
+.steps b{color:var(--txt)}
+.tip{margin:0 0 14px;padding:10px 12px;border-radius:10px;background:var(--panel2);color:var(--dim);font-size:13.5px}
+
+/* ---------- 关系图（SVG） ---------- */
+.bgword{font:800 120px/1 var(--sans);letter-spacing:.06em;fill:#fff;fill-opacity:.022}
+.edge,.elabel{transition:opacity .45s}
+.edge .line{fill:none;stroke:var(--c);stroke-width:1.8;stroke-opacity:.85;transition:stroke .4s,stroke-width .2s}
+.edge.k-harm .line{stroke-dasharray:8 5;animation:flow 1.1s linear infinite}
+.edge.k-rift .line{stroke-dasharray:1.5 5.5;stroke-linecap:round;stroke-width:2.6}
+.edge .hit{fill:none;stroke:transparent;stroke-width:22;pointer-events:stroke;cursor:pointer}
+.edge.hl .line,.edge.sel .line{stroke-width:3;stroke-opacity:1}
+.edge.dim,.elabel.dim{opacity:.1}
+.edge.off,.elabel.off{opacity:0;pointer-events:none}
+.edge.off .hit{pointer-events:none}
+@keyframes flow{to{stroke-dashoffset:-13}}
+.elabel{cursor:pointer}
+.elabel rect{fill:#121316;stroke:var(--c);stroke-opacity:.8}
+.elabel text{fill:#e4e8ee;font-size:12.5px;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.elabel.hl rect,.elabel.sel rect{fill:var(--c);stroke-opacity:1}
+.elabel.hl text,.elabel.sel text{fill:#111216;font-weight:700}
+.elabel.fresh rect{animation:lblpop .9s ease-out 2}
+@keyframes lblpop{50%{stroke-width:3.2;stroke-opacity:1}}
+#graph.lo .elabel:not(.hl):not(.sel){opacity:0;pointer-events:none}
+
+.node{cursor:pointer;transition:opacity .35s}
+.node.locked{display:none}
+.node.dim{opacity:.2}
+.node .ni{transform-origin:0 0}
+.node.enter .ni{animation:enter .7s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes enter{from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:1}}
+.node .ring{fill:none;stroke:var(--c);stroke-opacity:.35;stroke-dasharray:3 5}
+.node .hex-main{stroke:var(--c);stroke-width:2.4}
+.node .hex-in{fill:rgba(8,9,11,.55);stroke:#fff;stroke-opacity:.16}
+.node .mono{fill:#fff;font-size:30px;font-weight:800;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.node.hl .hex-main{stroke-width:3.6}
+.node .sel-ring{display:none;fill:none;stroke:#fff;stroke-width:1.6;stroke-dasharray:7 6;animation:spin 1.4s linear infinite}
+.node.sel .sel-ring{display:block}
+.node.sel .hex-main{filter:drop-shadow(0 0 8px var(--c))}
+@keyframes spin{to{stroke-dashoffset:-26}}
+.newtag{display:none;pointer-events:none}
+.node.fresh .newtag{display:block}
+.node.fresh .ring{stroke:var(--accent);stroke-opacity:.9;animation:ringp 1.5s ease-in-out infinite}
+@keyframes ringp{50%{stroke-opacity:.2}}
+.newtag rect{fill:var(--accent)}.newtag text{fill:#17181b;font-size:9.5px;font-weight:800;letter-spacing:.06em;text-anchor:middle;dominant-baseline:central}
+.plate rect.bg{fill:#0e0f12;stroke:#353941}
+.plate rect.bar{fill:var(--c)}
+.plate .cn{fill:#f3f4f6;font-size:14.5px;font-weight:700;text-anchor:middle}
+.plate .rl{fill:#9aa1ac;font-size:10.5px;text-anchor:middle}
+.badge{pointer-events:none}
+.badge rect{stroke:none}
+.badge text{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-anchor:middle;dominant-baseline:central}
+.badge.killer rect{fill:var(--red)}.badge.killer text{fill:#1a0508}
+.badge.dead rect{fill:#caced6}.badge.dead text{fill:#16171a}
+.badge.sus rect{fill:#ff9f43}.badge.sus text{fill:#1d1105}
+.node.isdead .mono{opacity:.45}
+.node.isdead .hex-main{stroke-dasharray:5 4}
+
+/* ---------- 桌面端 ---------- */
+@media (min-width:900px){
+  :root{--dock:60px}
+  #top{padding:16px 24px 28px}
+  .brand h1{font-size:21px}
+  #dock{left:50%;right:auto;bottom:16px;width:min(620px,calc(100vw - 440px));transform:translateX(-50%);border:1px solid var(--line);border-radius:16px;padding:8px}
+  .sheet{left:50%;right:auto;width:min(520px,92vw);transform:translate(-50%,106%);border-radius:18px 18px 0 0}
+  .sheet.open{transform:translate(-50%,0)}
+  .sheet.modal{bottom:auto;top:50%;border-radius:18px;border:1px solid var(--line);border-top:2px solid var(--accent);max-height:80vh;transform:translate(-50%,-46%);opacity:0;pointer-events:none;transition:transform .3s cubic-bezier(.2,.9,.25,1),opacity .25s,visibility 0s linear .3s}
+  .sheet.modal.open{transform:translate(-50%,-50%);opacity:1;pointer-events:auto;transition:transform .3s cubic-bezier(.2,.9,.25,1),opacity .25s,visibility 0s}
+  #detail{left:auto;right:16px;top:76px;bottom:16px;width:380px;max-height:none;transform:translateX(110%);border-radius:18px;border:1px solid var(--line);border-top:2px solid var(--accent)}
+  #detail.open{transform:none}
+  .grab{display:none}
+  #detail .sbody{padding-top:18px}
+  #toast{bottom:92px}
+}
+@media (prefers-reduced-motion:reduce){
+  .edge.k-harm .line,.node .sel-ring,.dk.pulse,.node.fresh .ring,.elabel.fresh rect{animation:none}
+  .sheet,.dialog,#toast,#backdrop{transition:none}
+}
+</style>
+</head>
+<body>
+<svg id="graph" xmlns="http://www.w3.org/2000/svg" aria-label="尼罗河惨案人物关系图"></svg>
+
+<header id="top">
+  <div class="brand">
+    <svg width="30" height="34" viewBox="-20 -22 40 44" aria-hidden="true">
+      <polygon points="-10,-17.3 10,-17.3 20,0 10,17.3 -10,17.3 -20,0" fill="none" stroke="#ffd426" stroke-width="2.2"/>
+      <polygon points="-5.5,-9.5 5.5,-9.5 11,0 5.5,9.5 -5.5,9.5 -11,0" fill="#ffd426"/>
+    </svg>
+    <div><h1>尼罗河惨案</h1><small>人物关系网</small></div>
+  </div>
+  <button id="helpBtn" type="button" aria-label="使用说明">?</button>
+</header>
+
+<nav id="dock" aria-label="操作栏">
+  <button class="dk main" id="btnProg" type="button">
+    <span class="ring" id="progRing">1/12</span>
+    <span><b>阅读进度</b><i id="progHint">解锁新剧情</i></span>
+  </button>
+  <button class="dk" id="btnPeople" type="button">
+    <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16.5 14.2c2.6.2 4.5 2.2 4.5 5"/></svg>
+    人物
+  </button>
+  <button class="dk" id="btnLegend" type="button">
+    <svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16" stroke-dasharray="3 3"/><path d="M4 17h16" stroke-dasharray="1 4"/></svg>
+    图例
+  </button>
+  <button class="dk" id="btnFit" type="button">
+    <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+    全图
+  </button>
+</nav>
+
+<section id="detail" class="sheet" aria-live="polite">
+  <div class="grab" id="grab"><i></i></div>
+  <div class="sbody" id="dbody"></div>
+</section>
+
+<div id="backdrop"></div>
+
+<section id="mProg" class="sheet modal" aria-label="阅读进度">
+  <div class="shead"><h2>阅读进度</h2><small id="progSub"></small><button class="xbtn" type="button" data-close aria-label="关闭">×</button></div>
+  <div class="sbody" id="progBody"></div>
+</section>
+
+<section id="mPeople" class="sheet modal" aria-label="人物速查">
+  <div class="shead"><h2>人物速查</h2><small id="pplSub"></small><button class="xbtn" type="button" data-close aria-label="关闭">×</button></div>
+  <div class="sbody">
+    <label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg><input id="q" type="search" placeholder="搜名字、昵称或身份，例如“杰姬”" autocomplete="off" enterkeyhint="search"></label>
+    <div id="pplList"></div>
+  </div>
+</section>
+
+<section id="mLegend" class="sheet modal" aria-label="图例">
+  <div class="shead"><h2>图例</h2><small>点一下可以隐藏某类连线</small><button class="xbtn" type="button" data-close aria-label="关闭">×</button></div>
+  <div class="sbody"><div id="kindList"></div><div class="gh" style="--c:#ffd426;margin-top:18px">人物边框颜色</div><div id="groupList"></div><div class="mini" style="margin-top:14px"><button class="linkbtn" type="button" id="resetPos">把人物摆回原来的位置</button></div></div>
+</section>
+
+<section id="mIntro" class="sheet modal intro" aria-label="使用说明">
+  <div class="sbody" style="padding-top:22px">
+    <h2>尼罗河惨案</h2>
+    <p class="en">DEATH ON THE NILE · 人物关系网</p>
+    <ol class="steps">
+      <li><b>点人物</b>，看他是谁、和谁有关系。名字记不住就点底部「人物」，还能搜昵称。</li>
+      <li><b>读到新剧情，就点底部黄色按钮解锁</b>。没读到的人物和关系不会出现，不会剧透。</li>
+      <li>人物可以<b>拖着玩</b>，松手会弹回去；两指可以放大缩小。</li>
+    </ol>
+    <p class="tip" id="tipText">进度只记在这台手机的浏览器里。想放到桌面：用 Safari 打开，点底部的分享按钮，选「添加到主屏幕」。</p>
+    <div style="display:flex;gap:10px">
+      <button class="btn primary" type="button" id="introStart">从头开始看</button>
+      <button class="btn" type="button" id="introCatch">我已经读了一部分</button>
+    </div>
+  </div>
+</section>
+
+<section id="dlg" class="dialog" role="dialog" aria-modal="true">
+  <h3 id="dlgT"></h3><p id="dlgP"></p>
+  <div class="row"><button class="btn" type="button" id="dlgNo">还没有</button><button class="btn primary" type="button" id="dlgYes">读到了</button></div>
+</section>
+<div id="toast" role="status"></div>
+
+<script>
+(() => {
+'use strict';
+const NS = 'http://www.w3.org/2000/svg';
+const R = 32;
+const $ = s => document.querySelector(s);
+const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/* =====================================================================
+   数据
+   译名参照新星出版社版（琳内特·里奇卫、杰奎琳（杰姬））。其余人名在不同译本里写法不一，
+   常见的别写放进了 alt，搜索时都能搜到。
+   notes / states 里每一项的第一个数字，是「读到第几步才显示」。
+   ===================================================================== */
+const KINDS = {
+  kin:   {name:'亲属',       eg:'母子、母女、表亲',     c:'#6fd6a8'},
+  love:  {name:'情感',       eg:'夫妻、未婚夫妻、感情线',   c:'#ff7aa8'},
+  friend:{name:'友人',       eg:'朋友、旧识、聊伴',     c:'#7da8ff'},
+  work:  {name:'雇佣 / 委托', eg:'女仆、护士、受托人',   c:'#c8b68a'},
+  probe: {name:'调查 / 追查', eg:'劝告、打听、调查',     c:'#3fd0e8'},
+  rift:  {name:'矛盾',       eg:'敌意、争执、冲突', c:'#ff9f43'},
+  harm:  {name:'加害 / 共谋', eg:'杀害、勒索、合谋',     c:'#ff4d5e'},
+};
+const GROUPS = {
+  core:  {name:'案件核心',     c:'#ffd426'},
+  det:   {name:'调查方',       c:'#3fd0e8'},
+  circle:{name:'琳内特的熟人', c:'#b79cff'},
+  pax:   {name:'同船乘客',     c:'#9fb0bf'},
+};
+
+const STAGES = [
+  {t:'英国：庄园与餐厅',   r:'琳内特买下沃德庄园。杰姬请她给未婚夫西蒙一份工作，结果琳内特自己和西蒙结了婚。波洛在伦敦的餐厅里，无意听到杰姬和西蒙谈起去埃及度蜜月。'},
+  {t:'阿斯旺：酒店露台',   r:'新婚夫妇来到阿斯旺的酒店，杰姬也出现了，露台上的气氛一下子紧张起来。阿勒顿母子、奥特本母女和彭宁顿也在这里。'},
+  {t:'波洛的两场谈话',     r:'琳内特想请波洛出面，被拒绝。波洛夜里在河边劝杰姬，她给他看了随身带的手枪。西蒙也向波洛抱怨杰姬的纠缠。'},
+  {t:'登上卡纳克号',       r:'一行人登上尼罗河游轮卡纳克号，同船的乘客一个个登场。'},
+  {t:'神庙游览',           r:'游轮在神庙靠岸，一块巨石从悬崖滚下，差一点砸中琳内特。杰姬那天没有上岸。雷斯上校在瓦迪哈勒法上船。'},
+  {t:'沙龙之夜',           r:'晚上在沙龙里，杰姬喝醉后向西蒙开枪，打中了他的腿，随后崩溃痛哭，被扶回舱房。贝斯纳医生为西蒙处理伤口。'},
+  {t:'清晨的发现',         r:'第二天清晨，琳内特被发现死在自己的舱房里，珍珠项链也不见了。杰姬的手枪在尼罗河里被找到，裹着范·斯凯乐小姐丢失的披肩。'},
+  {t:'波洛的调查',         r:'波洛和雷斯上校盘问了全船的人。护士鲍尔斯说，是范·斯凯乐小姐拿走了珍珠，可找回来的项链是仿品。'},
+  {t:'女仆路易丝',         r:'路易丝被发现死在自己的舱房里，心脏被刺穿。'},
+  {t:'奥特本夫人',         r:'奥特本夫人说自己看到了凶手，话没说完，就被人隔着舱门开枪打死。凶枪是彭宁顿的左轮手枪。'},
+  {t:'真相大白',           r:'波洛说出真相：西蒙和杰姬是同谋。蒂姆、彭宁顿、理查蒂各自藏着的秘密也一并揭开。'},
+  {t:'尾声',               r:'船靠岸时，杰姬先开枪打死西蒙，再自尽，波洛没有拦。案子之后，蒂姆和罗莎莉、科妮莉亚和贝斯纳医生各自走到了一起。'},
+];
+
+const NODES = [
+  {id:'linnet', short:'琳内特', mono:'琳', full:'琳内特·里奇卫', en:'Linnet Ridgeway', role:'女继承人', g:'core', from:1, x:425, y:364,
+   alt:['林内特','林娜','琳奈','里奇韦','瑞吉威','多伊尔夫人','道尔夫人','琳内特·多伊尔'],
+   notes:[[1,'年轻、漂亮、头脑好，继承了一大笔家产的英国女子，习惯想要什么就得到什么。杰姬请她给未婚夫西蒙一份地产经纪的工作，结果她自己和西蒙结了婚。婚后随夫姓，书里也叫她琳内特·多伊尔。'],
+          [2,'新婚旅行来到阿斯旺的酒店。杰姬出现在露台上，她明显不自在，带着西蒙匆匆离开。'],
+          [3,'她单独找波洛，想请他出面让杰姬别再纠缠。波洛没有接受，也不收她的钱。'],
+          [4,'上船后，她对波洛说出了自己的害怕。'],
+          [5,'游览神庙时，一块巨石从悬崖上滚下来，擦着她落下。'],
+          [7,'清晨，她被发现死在自己的舱房里，头部中了一枪，珍珠项链也不见了。'],
+          [11,'凶手是她的丈夫西蒙，杰姬是同谋。西蒙娶她是为了钱，两人早就设好了局。']],
+   badges:[[7,'被害','dead']]},
+  {id:'simon', short:'西蒙', mono:'西', full:'西蒙·多伊尔', en:'Simon Doyle', role:'新婚丈夫', g:'core', from:1, x:245, y:50,
+   alt:['西蒙·道尔','道尔','多伊尔'],
+   notes:[[1,'没什么钱的年轻人，原本是杰姬的未婚夫。杰姬请琳内特给他一份地产经纪的工作，不久后琳内特成了他的妻子。'],
+          [2,'新婚旅行一路被前未婚妻跟着，在旁人面前显得十分为难。'],
+          [3,'他向波洛抱怨杰姬的纠缠，说自己真想掐死她，还说夫妻俩打算坐卡纳克号躲开她。'],
+          [6,'杰姬在沙龙里向他开枪，打中了他的腿，贝斯纳医生替他处理了伤口。'],
+          [7,'琳内特遇害时，他正带着腿伤躺在舱房里。'],
+          [11,'他是凶手之一。他和杰姬一直是恋人，娶琳内特只为她的钱；腿伤是不在场证明的一部分，开枪杀死妻子的是他。'],
+          [12,'船靠岸后，他被杰姬开枪打死。']],
+   badges:[[11,'凶手','killer'],[12,'已死','dead']]},
+  {id:'jackie', short:'杰姬', mono:'杰', full:'杰奎琳（杰姬）·德·贝尔福特', nick:'杰姬', en:'Jacqueline de Bellefort', role:'前未婚妻', g:'core', from:1, x:547, y:50,
+   alt:['杰奎琳','杰基','奎杰琳','德贝尔福特','贝尔福'],
+   notes:[[1,'曾是琳内特最好的朋友，也是西蒙的未婚妻。她请琳内特给西蒙找工作，结果西蒙娶了琳内特。'],
+          [2,'她出现在酒店露台上，让琳内特和西蒙都很不安。'],
+          [3,'波洛夜里在河边找她谈话。她给他看了随身带的小手枪，说要一路盯着这对夫妇。波洛劝她放下报复，她没有听。'],
+          [4,'她抢先上了同一条船。'],
+          [5,'落石那天她没有上岸，所以不可能是她推的。'],
+          [6,'那天夜里她在沙龙里喝醉，开枪打中了西蒙的腿，随后崩溃痛哭，被范索普和科妮莉亚扶回舱房。'],
+          [7,'她的手枪后来在尼罗河里被找到，可案发那晚一直有人看着她。'],
+          [11,'谋杀由她策划。她和西蒙一直是恋人，整个计划为的是琳内特的钱。路易丝和奥特本夫人也是她杀的。'],
+          [12,'靠岸后，她用第二把手枪先打死西蒙，再自尽。波洛知道她留着这把枪，没有拦。']],
+   badges:[[11,'凶手','killer'],[12,'已死','dead']]},
+
+  {id:'poirot', short:'波洛', mono:'波', full:'赫尔克里·波洛', en:'Hercule Poirot', role:'侦探', g:'det', from:1, x:733, y:321,
+   alt:['白罗','赫丘勒·波洛','波罗'],
+   notes:[[1,'比利时侦探。在伦敦的一家餐厅里，他无意听到杰姬和西蒙聊起去埃及度蜜月。'],
+          [2,'他在阿斯旺度假，住在同一家酒店，和阿勒顿母子、奥特本母女都说上了话。'],
+          [3,'琳内特请他帮忙，他拒绝了。夜里他去劝杰姬，西蒙也找他抱怨。'],
+          [5,'他在瓦迪哈勒法见到了老友雷斯上校。'],
+          [7,'琳内特死后，他和雷斯上校一起接手调查。'],
+          [11,'他当众说出真相，指出凶手。'],
+          [12,'他明知杰姬还留着第二把枪，没有收走。']]},
+  {id:'race', short:'雷斯上校', mono:'雷', full:'雷斯上校', en:'Colonel Race', role:'情报官', g:'det', from:5, x:870, y:169,
+   alt:['瑞斯','瑞斯上校','瑞斯总督','雷斯'],
+   notes:[[5,'在瓦迪哈勒法上船的情报官，是波洛的老朋友。他告诉波洛，有一名危险分子可能混在乘客里。'],
+          [7,'和波洛一起勘查现场、盘问乘客。'],
+          [11,'他要找的人是意大利考古学家理查蒂。']]},
+
+  {id:'pennington', short:'彭宁顿', mono:'彭', full:'安德鲁·彭宁顿', en:'Andrew Pennington', role:'财产受托人', g:'circle', from:2, x:224, y:501,
+   alt:['潘宁顿','彭宁顿·安德鲁'],
+   notes:[[2,'琳内特在美国的两位受托人之一，替她管理遗产。他和这对新婚夫妇住在同一家酒店。'],
+          [3,'西蒙对波洛说，他们是在开罗碰到彭宁顿的。'],
+          [4,'他也在这条船的乘客名单上。'],
+          [8,'波洛和雷斯上校盘问了他。'],
+          [10,'凶枪被认出是他的左轮手枪，他自己也大吃一惊。'],
+          [11,'他在投机里赔光了琳内特的遗产。神庙那块落石是他推的，他承认推石，但否认杀人。']],
+   badges:[[10,'嫌疑','sus'],[11,'推石者','sus']]},
+  {id:'fanthorp', short:'范索普', mono:'范', full:'詹姆斯（吉姆）·范索普', nick:'吉姆', en:'James “Jim” Fanthorp', role:'年轻律师', g:'circle', from:4, x:271, y:710,
+   alt:['吉姆·范索普','范瑟普'],
+   notes:[[4,'话不多的英国年轻人，同船旅行。他的舅舅威廉·卡迈克尔是琳内特在英国的受托人，他是被派来埃及“看着点情况”的。'],
+          [6,'沙龙里开枪后，他和科妮莉亚把杰姬送回舱房，随后去找那把不见了的手枪。'],
+          [11,'他上船是为了盯住彭宁顿，怀疑对方动了琳内特的财产。']]},
+  {id:'louise', short:'路易丝', mono:'路', full:'路易丝·布尔热', en:'Louise Bourget', role:'女仆', g:'circle', from:4, x:396, y:135,
+   alt:['露易丝·伯格','路易斯'],
+   notes:[[4,'琳内特的法国女仆，随主人上船。'],
+          [8,'波洛盘问她时，觉得她藏着话没说。'],
+          [9,'她被发现死在自己的舱房里，被人刺中了心脏。'],
+          [11,'她看见西蒙走进琳内特的舱房，转头向西蒙勒索，被杰姬杀死灭口。']],
+   badges:[[9,'被害','dead']]},
+  {id:'joanna', short:'乔安娜', mono:'乔', full:'乔安娜·索思伍德', en:'Joanna Southwood', role:'琳内特闺蜜', g:'circle', from:1, x:415, y:613,
+   alt:['索思任德','索斯伍德','乔安娜·索思任德'],
+   notes:[[1,'伦敦社交圈里琳内特的好友。她不在埃及，只在谈话里被提到。'],
+          [2,'她也是阿勒顿母子的远房亲戚。'],
+          [11,'她和蒂姆是珠宝窃贼的搭档：她把仿制的珍珠藏在挖空的书里寄给蒂姆。']],
+   badges:[[11,'同伙','sus']]},
+
+  {id:'marie', short:'范·斯凯乐', mono:'斯', full:'范·斯凯乐小姐', en:'Miss Marie Van Schuyler', role:'势利老小姐', g:'pax', from:4, x:70, y:448,
+   alt:['范斯凯勒','范·斯凯勒','范肖勒','斯维勒','玛莉'],
+   notes:[[4,'讲究出身、说话傲慢的美国有钱老小姐，带着表亲科妮莉亚和私人护士同行。'],
+          [7,'她前一天报告说自己的丝绒披肩不见了。后来包着杰姬那把手枪的，正是这条披肩。'],
+          [8,'护士鲍尔斯说她有偷窃癖，琳内特的珍珠项链是她拿走的。找回来的那串，却是仿品。'],
+          [11,'真珍珠早被蒂姆换走，她偷到手的只是假货。']],
+   badges:[[8,'偷窃癖','sus']]},
+  {id:'cornelia', short:'科妮莉亚', mono:'科', full:'科妮莉亚·罗布森', en:'Cornelia Robson', role:'陪伴的表亲', g:'pax', from:4, x:70, y:115,
+   alt:['科妮丽亚','科奈莉亚','罗伯森'],
+   notes:[[4,'家境一般的年轻姑娘，被有钱的表亲带出国当陪伴，常被使唤。性格天真，容易激动，对一路上的见闻都觉得新鲜。'],
+          [6,'沙龙里开枪后，她和范索普把杰姬送回舱房。'],
+          [12,'案后，她和贝斯纳医生走到了一起。追求过她的弗格森没有成功。']]},
+  {id:'bowers', short:'鲍尔斯', mono:'鲍', full:'鲍尔斯小姐', en:'Miss Bowers', role:'私人护士', g:'pax', from:4, x:144, y:657,
+   alt:['鲍尔小姐'],
+   notes:[[4,'范·斯凯乐小姐的私人护士，照料她的起居。'],
+          [8,'她对波洛说，范·斯凯乐小姐有偷东西的毛病，她负责把东西悄悄还回去。']]},
+  {id:'bessner', short:'贝斯纳', mono:'贝', full:'卡尔·贝斯纳医生', en:'Dr Carl Bessner', role:'奥地利医生', g:'pax', from:4, x:264, y:238,
+   alt:['贝斯奈','贝斯那'],
+   notes:[[4,'同船的奥地利医生，五十多岁。'],
+          [6,'西蒙腿部中枪后，由他处理伤口。'],
+          [11,'他对西蒙伤势的判断，成了西蒙的不在场证明。'],
+          [12,'案后，他和科妮莉亚走到了一起。']]},
+  {id:'ferguson', short:'弗格森', mono:'弗', full:'弗格森先生', en:'Mr Ferguson', role:'激进青年', g:'pax', from:4, x:164, y:319,
+   alt:['弗格逊'],
+   notes:[[4,'年轻的激进左翼，爱当众批评有钱人，对琳内特毫不掩饰厌恶。'],
+          [8,'他对科妮莉亚有好感，常找她说话。'],
+          [12,'他其实出身贵族，“弗格森”只是他用来扮激进分子的名字。']]},
+  {id:'salome', short:'奥特本夫人', mono:'奥', full:'萨洛美·奥特本', en:'Mrs Salome Otterbourne', role:'言情作家', g:'pax', from:2, x:590, y:249,
+   alt:['奥特伯恩','莎乐美','奥特邦','奥特本太太','萨洛米'],
+   notes:[[2,'写大胆题材言情小说的作家，爱喝酒，和波洛聊起自己的书。'],
+          [10,'她说自己看到了凶手，话没说完，就被人隔着舱门开枪打死。'],
+          [11,'她看到的是杰姬从路易丝的舱房里出来。']],
+   badges:[[10,'被害','dead']]},
+  {id:'rosalie', short:'罗莎莉', mono:'罗', full:'罗莎莉·奥特本', en:'Rosalie Otterbourne', role:'作家的女儿', g:'pax', from:2, x:647, y:449,
+   alt:['罗莎莉·奥特伯恩'],
+   notes:[[2,'奥特本夫人的女儿，沉默、倔强，一直设法拦着母亲喝酒。她对琳内特有明显的敌意。'],
+          [12,'蒂姆在这趟航程里喜欢上了她，案后两人成了一对。']]},
+  {id:'allerton', short:'阿勒顿夫人', mono:'阿', full:'阿勒顿夫人', en:'Mrs Allerton', role:'蒂姆的母亲', g:'pax', from:2, x:814, y:549,
+   alt:['艾勒顿太太','艾乐顿','艾勒顿夫人','阿勒顿太太'],
+   notes:[[2,'有教养的英国太太，带着儿子蒂姆旅行，也是乔安娜的远房亲戚。'],
+          [4,'她邀波洛同桌吃饭，常和他聊船上的人。'],
+          [12,'案后，波洛告诉她，自己早就知道杰姬留着第二把枪。']]},
+  {id:'tim', short:'蒂姆', mono:'蒂', full:'蒂姆·阿勒顿', en:'Tim Allerton', role:'阿勒顿夫人之子', g:'pax', from:2, x:649, y:665,
+   alt:['提姆·艾乐顿','蒂姆·艾勒顿','提姆'],
+   notes:[[2,'陪母亲旅行的青年，是乔安娜的亲戚。他把琳内特夫妇和彭宁顿介绍给自己的母亲。'],
+          [11,'他是职业窃贼，用乔安娜寄来的仿品换走了琳内特的真珍珠。波洛拆穿后，让他自己把真珍珠放回去，没有追究。'],
+          [12,'他爱上了罗莎莉，案后两人成了一对。']],
+   badges:[[11,'窃贼','sus']]},
+  {id:'richetti', short:'理查蒂', mono:'理', full:'古多·理查蒂', en:'Signor Guido Richetti', role:'考古学家', g:'pax', from:4, x:688, y:100,
+   alt:['里凯蒂','里奇蒂','古多·里凯蒂'],
+   notes:[[4,'话多、爱发火的意大利考古学家，对沿途古迹滔滔不绝。波洛在象岛上先认识了他。'],
+          [11,'他就是雷斯上校在追的那名危险分子，身份暴露，船靠岸后第一个被带走。']],
+   badges:[[11,'被捕','sus']]},
+];
+
+// states: [从第几步起, 标签, 类型, 箭头方向]
+const EDGES = [
+  {a:'linnet', b:'simon', from:1, states:[[1,'夫妻','love'],[11,'丈夫杀妻','harm']],
+   notes:[[1,'经杰姬介绍认识，婚后去埃及度蜜月。'],[11,'西蒙娶她是为了钱，婚后仍和杰姬是恋人，最后亲手杀了她。']]},
+  {a:'jackie', b:'simon', from:1, states:[[1,'前未婚夫妻','love'],[6,'开枪打伤','rift','ab'],[11,'恋人 · 共谋','harm'],[12,'开枪杀死','harm','ab']],
+   notes:[[1,'两人曾订婚。杰姬请琳内特给没有工作的西蒙安排职位，结果琳内特和西蒙结了婚。'],
+          [6,'沙龙里，杰姬喝醉后向西蒙开枪，打中了他的腿。'],
+          [11,'两人从未分开，杀害琳内特的计划由杰姬制定。'],
+          [12,'船靠岸后，杰姬先打死西蒙，再自尽。']]},
+  {a:'linnet', b:'jackie', from:1, states:[[1,'旧友','friend'],[2,'反目的旧友','rift'],[11,'凶手与被害人','harm']],
+   notes:[[1,'杰姬曾是琳内特最好的朋友。'],[2,'杰姬一路跟着新婚的琳内特，在酒店露台上撞个正着。'],
+          [11,'杰姬的纠缠是计划的一部分，用来把所有人的注意力引到自己身上。']]},
+  {a:'linnet', b:'poirot', from:3, states:[[3,'被拒绝的委托','work','ab']],
+   notes:[[3,'琳内特请波洛出面，让杰姬别再纠缠。波洛没有接受，也不收她的钱。'],[4,'上船后，琳内特对波洛说出了自己的害怕。'],[7,'琳内特死后，波洛接手调查。']]},
+  {a:'poirot', b:'jackie', from:1, states:[[1,'无意听到','probe','ab'],[3,'劝告','probe','ab'],[11,'识破','probe','ab'],[12,'默许','probe','ab']],
+   notes:[[1,'波洛在伦敦的餐厅里，无意听到杰姬和西蒙聊起去埃及度蜜月。'],
+          [3,'夜里，波洛在河边劝杰姬别让仇恨占据内心。她给他看了随身带的手枪，没有听。'],
+          [11,'波洛识破了她和西蒙的计划，夜里去她的舱房，听她说出了全部经过。'],
+          [12,'他明知杰姬还留着第二把枪，没有收走。']]},
+  {a:'poirot', b:'race', from:5, states:[[5,'旧识','friend']],
+   notes:[[5,'雷斯上校在瓦迪哈勒法上船，两人是老朋友。'],[7,'琳内特死后，两人一起查案。']]},
+  {a:'linnet', b:'pennington', from:2, states:[[2,'财产受托人','work'],[11,'受托人 · 加害','harm']],
+   notes:[[2,'彭宁顿是琳内特在美国的受托人之一，替她管理遗产。'],[11,'他赔光了她的遗产，神庙那块落石是他推的。']]},
+  {a:'fanthorp', b:'pennington', from:11, states:[[11,'暗中调查','probe','ab']],
+   notes:[[11,'范索普上船是为了盯住彭宁顿。']]},
+  {a:'linnet', b:'fanthorp', from:4, states:[[4,'受托人的外甥','work']],
+   notes:[[4,'范索普的舅舅威廉·卡迈克尔是琳内特在英国的受托人。']]},
+  {a:'linnet', b:'louise', from:4, states:[[4,'女仆','work','ab']],
+   notes:[[4,'路易丝是琳内特的法国女仆，随她上船。']]},
+  {a:'louise', b:'simon', from:11, states:[[11,'勒索','harm','ab']],
+   notes:[[11,'路易丝看见西蒙走进琳内特的舱房，用这件事向他要钱。']]},
+  {a:'jackie', b:'louise', from:11, states:[[11,'杀害','harm','ab']],
+   notes:[[11,'为了堵住勒索，杰姬刺死了路易丝。']]},
+  {a:'linnet', b:'joanna', from:1, states:[[1,'好友','friend']],
+   notes:[[1,'乔安娜是琳内特在伦敦社交圈里的好友。']]},
+  {a:'joanna', b:'tim', from:2, states:[[2,'远房亲戚','kin'],[11,'亲戚 · 珠宝同伙','harm']],
+   notes:[[2,'乔安娜是阿勒顿母子的远房亲戚。'],[11,'乔安娜把仿制珍珠藏在挖空的书里寄给蒂姆，蒂姆用它调换真珍珠。']]},
+  {a:'tim', b:'allerton', from:2, states:[[2,'母子','kin']],
+   notes:[[2,'阿勒顿夫人带着儿子同行。']]},
+  {a:'tim', b:'rosalie', from:12, states:[[12,'案后成对','love']],
+   notes:[[12,'蒂姆在航程里喜欢上了罗莎莉。波洛没有追究珍珠的事，一部分原因是不想耽误他们两人。']]},
+  {a:'tim', b:'linnet', from:11, states:[[11,'调包珍珠','harm','ab']],
+   notes:[[11,'蒂姆用仿品换走了琳内特的真珍珠。范·斯凯乐小姐后来“偷”到手的，已经是假的。']]},
+  {a:'allerton', b:'poirot', from:4, states:[[4,'旅途中的聊伴','friend']],
+   notes:[[4,'阿勒顿夫人邀波洛同桌吃饭，常和他聊船上的人。'],[12,'案后，波洛对她说了实话：他早就知道杰姬留着第二把枪。']]},
+  {a:'allerton', b:'rosalie', from:4, states:[[4,'关照','friend','ab']],
+   notes:[[4,'阿勒顿夫人对罗莎莉格外和气，常常关照她。']]},
+  {a:'salome', b:'rosalie', from:2, states:[[2,'母女','kin']],
+   notes:[[2,'罗莎莉一直在设法让母亲少喝酒。']]},
+  {a:'jackie', b:'salome', from:11, states:[[11,'灭口','harm','ab']],
+   notes:[[11,'奥特本夫人看见杰姬从路易丝的舱房出来，正要说出来，就被杰姬开枪打死。凶器是彭宁顿的左轮手枪。']]},
+  {a:'rosalie', b:'linnet', from:2, states:[[2,'怨恨','rift','ab']],
+   notes:[[2,'罗莎莉对琳内特有明显的敌意，不愿和她多说。']]},
+  {a:'ferguson', b:'linnet', from:4, states:[[4,'公开抨击','rift','ab']],
+   notes:[[4,'弗格森当面批评琳内特所代表的阶层，毫不掩饰厌恶。']]},
+  {a:'ferguson', b:'cornelia', from:8, states:[[8,'追求者','love','ab']],
+   notes:[[8,'弗格森对科妮莉亚有好感，常找她说话。'],[12,'最后科妮莉亚选的是贝斯纳医生，弗格森落选。']]},
+  {a:'cornelia', b:'bessner', from:12, states:[[12,'案后成对','love']],
+   notes:[[12,'案子结束后，科妮莉亚和贝斯纳医生走到了一起。']]},
+  {a:'cornelia', b:'marie', from:4, states:[[4,'表亲 · 陪伴','kin']],
+   notes:[[4,'科妮莉亚是范·斯凯乐小姐家境较差的表亲，被带在身边做陪伴，常被使唤。']]},
+  {a:'bowers', b:'marie', from:4, states:[[4,'私人护士','work','ab']],
+   notes:[[4,'鲍尔斯小姐照料范·斯凯乐小姐的起居。'],[8,'她还负责把范·斯凯乐小姐顺手拿走的东西悄悄还回去。']]},
+  {a:'marie', b:'linnet', from:8, states:[[8,'拿走项链','rift','ab']],
+   notes:[[8,'范·斯凯乐小姐有偷窃癖，拿走了琳内特的珍珠项链。护士把项链交了出来，波洛一看，是仿品。'],[11,'真珍珠早被蒂姆换走。']]},
+  {a:'bessner', b:'simon', from:6, states:[[6,'医患','work','ab']],
+   notes:[[6,'西蒙腿部中枪后，由贝斯纳医生处理伤口。'],[11,'医生断定他伤得走不了路，这成了西蒙的不在场证明。']]},
+  {a:'race', b:'richetti', from:11, states:[[11,'追捕目标','probe','ab']],
+   notes:[[11,'雷斯上校在找的危险分子就是理查蒂。']]},
+  {a:'poirot', b:'richetti', from:4, states:[[4,'象岛初识','friend']],
+   notes:[[4,'波洛在象岛上先认识了理查蒂。']]},
+];
+
+/* =====================================================================
+   状态
+   ===================================================================== */
+const nodeById = {}, edgeById = {};
+const N_STAGES = STAGES.length;
+NODES.forEach((n, i) => { n.i = i; n.ox = n.x; n.oy = n.y; n.hx = n.x; n.hy = n.y; n.vx = 0; n.vy = 0; n.w = 76; n.drag = false; nodeById[n.id] = n; });
+EDGES.forEach((e, i) => { e.id = 'e' + (i + 1); e.A = nodeById[e.a]; e.B = nodeById[e.b]; e.bend = 10; edgeById[e.id] = e; });
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (_) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (_) {} },
+};
+let seenInit = []; try { seenInit = JSON.parse(store.get('nile.seen', '[]')) || []; } catch (_) {}
+const state = {stage:1, hidden:new Set(), sel:null, selEdge:null, prev:null, hoverNode:null, hoverEdge:null, seen:new Set(seenInit), moved:false, catchUp:false, freshEdges:new Set()};
+
+const pickState = (arr, s) => { let r = null; for (const it of arr) if (it[0] <= s) r = it; return r; };
+const nVis = n => n.from <= state.stage;
+const eVis = e => e.from <= state.stage;
+const eSt = e => pickState(e.states, state.stage) || e.states[0];
+const eKind = e => eSt(e)[2];
+const eLabel = e => eSt(e)[1];
+const eDir = e => eSt(e)[3] || null;
+const eOn = e => eVis(e) && !state.hidden.has(eKind(e));
+const nBadge = n => (n.badges ? pickState(n.badges, state.stage) : null);
+const nFresh = n => n.from === state.stage && !state.seen.has(n.id);
+const saveSeen = () => store.set('nile.seen', JSON.stringify([...state.seen]));
+
+/* =====================================================================
+   SVG
+   ===================================================================== */
+const S = (tag, attrs, parent) => {
+  const el = document.createElementNS(NS, tag);
+  for (const k in attrs || {}) el.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(el);
+  return el;
+};
+const hex = r => [0,1,2,3,4,5].map(i => { const a = Math.PI / 3 * i; return (r * Math.cos(a)).toFixed(1) + ',' + (r * Math.sin(a)).toFixed(1); }).join(' ');
+
+const svg = $('#graph');
+const defs = S('defs', {}, svg);
+const gridS = S('pattern', {id:'gridS', width:40, height:40, patternUnits:'userSpaceOnUse'}, defs);
+S('path', {d:'M40 0H0V40', fill:'none', stroke:'#fff', 'stroke-opacity':.035}, gridS);
+const gridL = S('pattern', {id:'gridL', width:200, height:200, patternUnits:'userSpaceOnUse'}, defs);
+S('path', {d:'M200 0H0V200', fill:'none', stroke:'#fff', 'stroke-opacity':.06}, gridL);
+for (const g in GROUPS) {
+  const p = S('pattern', {id:'hatch-' + g, width:7, height:7, patternUnits:'userSpaceOnUse', patternTransform:'rotate(45)'}, defs);
+  S('rect', {width:7, height:7, fill:'#101114'}, p);
+  S('line', {x1:0, y1:0, x2:0, y2:7, stroke:GROUPS[g].c, 'stroke-opacity':.28, 'stroke-width':2.2}, p);
+}
+S('polygon', {points:hex(R)}, S('clipPath', {id:'hexclip'}, defs));
+for (const k in KINDS) {
+  const m = S('marker', {id:'ar-' + k, viewBox:'0 0 10 10', refX:9, refY:5, markerWidth:14, markerHeight:14, markerUnits:'userSpaceOnUse', orient:'auto-start-reverse'}, defs);
+  S('path', {d:'M0 1 L10 5 L0 9 z', fill:KINDS[k].c}, m);
+}
+const vp = S('g', {}, svg);
+const gDeco = S('g', {'pointer-events':'none'}, vp);
+const gEdges = S('g', {}, vp), gLabels = S('g', {}, vp), gNodes = S('g', {}, vp);
+
+// 背景：网格、同心圆、河水线、大字
+const bb = {x0:1e9, y0:1e9, x1:-1e9, y1:-1e9};
+NODES.forEach(n => { bb.x0 = Math.min(bb.x0, n.hx); bb.x1 = Math.max(bb.x1, n.hx); bb.y0 = Math.min(bb.y0, n.hy); bb.y1 = Math.max(bb.y1, n.hy); });
+const wcx = (bb.x0 + bb.x1) / 2, wcy = (bb.y0 + bb.y1) / 2, wr = Math.max(bb.x1 - bb.x0, bb.y1 - bb.y0) / 2;
+S('rect', {x:-2400, y:-1800, width:6000, height:5000, fill:'url(#gridS)'}, gDeco);
+S('rect', {x:-2400, y:-1800, width:6000, height:5000, fill:'url(#gridL)'}, gDeco);
+[.62, .9, 1.25].forEach((f, i) => S('circle', {cx:wcx, cy:wcy, r:wr * f, fill:'none', stroke:'#fff', 'stroke-opacity':.055, 'stroke-dasharray':i === 1 ? '1 9' : '3 11'}, gDeco));
+[0, 1, 2].forEach(i => {
+  const y0 = bb.y1 + 170 + i * 28; let d = '';
+  for (let x = wcx - 1100; x <= wcx + 1100; x += 20) d += (x === wcx - 1100 ? 'M' : 'L') + x + ' ' + (y0 + 9 * Math.sin(x / 55 + i)).toFixed(1);
+  S('path', {d, fill:'none', stroke:'#3fd0e8', 'stroke-opacity':.07 - i * .015, 'stroke-width':1.5}, gDeco);
+});
+S('text', {class:'bgword', x:bb.x0 - 60, y:bb.y1 + 150}, gDeco).textContent = 'DEATH ON THE NILE';
+
+// 人物
+NODES.forEach(n => {
+  const g = S('g', {class:'node locked', 'data-id':n.id}, gNodes);
+  g.style.setProperty('--c', GROUPS[n.g].c);
+  const ni = S('g', {class:'ni'}, g);
+  S('polygon', {class:'ring', points:hex(R + 8)}, ni);
+  S('polygon', {class:'hex-main', points:hex(R), fill:'url(#hatch-' + n.g + ')'}, ni);
+  S('polygon', {class:'hex-in', points:hex(R - 6)}, ni);
+  S('polygon', {class:'sel-ring', points:hex(R + 13)}, ni);
+  if (n.img) S('image', {href:n.img, x:-R, y:-R, width:2 * R, height:2 * R, preserveAspectRatio:'xMidYMid slice', 'clip-path':'url(#hexclip)'}, ni);
+  else S('text', {class:'mono', x:0, y:2}, ni).textContent = n.mono;
+  const nt = S('g', {class:'newtag', transform:'translate(' + (-R * .72) + ' ' + (-R * .9) + ')'}, ni);
+  S('rect', {x:-17, y:-8, width:34, height:16, rx:3}, nt); S('text', {x:0, y:.5}, nt).textContent = 'NEW';
+  n.plate = S('g', {class:'plate'}, ni);
+  n.plBg = S('rect', {class:'bg', y:0, height:34, rx:3}, n.plate);
+  n.plBar = S('rect', {class:'bar', y:0, width:3, height:34}, n.plate);
+  n.plCn = S('text', {class:'cn', x:1, y:15}, n.plate); n.plCn.textContent = n.short;
+  n.plRl = S('text', {class:'rl', x:1, y:28}, n.plate); n.plRl.textContent = n.role;
+  n.badge = S('g', {class:'badge', transform:'translate(' + (R * .78) + ' ' + (-R * .88) + ')'}, ni);
+  n.badgeRect = S('rect', {x:-20, y:-9, width:40, height:18, rx:4}, n.badge);
+  n.badgeText = S('text', {x:0, y:1}, n.badge);
+  n.el = g;
+});
+// 连线
+EDGES.forEach(e => {
+  e.g = S('g', {class:'edge off', 'data-id':e.id}, gEdges);
+  e.line = S('path', {class:'line'}, e.g);
+  e.hit = S('path', {class:'hit'}, e.g);
+  e.lab = S('g', {class:'elabel off', 'data-id':e.id}, gLabels);
+  e.li = S('g', {class:'li'}, e.lab);
+  e.rect = S('rect', {y:-11, height:22, rx:11}, e.li);
+  e.text = S('text', {y:1}, e.li);
+});
+
+/* =====================================================================
+   几何：连线端点避开六边形和名牌，标签放在连线中点
+   ===================================================================== */
+let PS = 1; // 名牌与标签的反向缩放：画面缩小时让字不至于太小
+const plateTop = R * .866 + 10;
+function clipSeg(ax, ay, bx, by, box) {
+  let t0 = 0, t1 = 1;
+  const dx = bx - ax, dy = by - ay, p = [-dx, dx, -dy, dy], q = [ax - box[0], box[2] - ax, ay - box[1], box[3] - ay];
+  for (let k = 0; k < 4; k++) {
+    if (p[k] === 0) { if (q[k] < 0) return null; continue; }
+    const r = q[k] / p[k];
+    if (p[k] < 0) { if (r > t1) return null; if (r > t0) t0 = r; } else { if (r < t0) return null; if (r < t1) t1 = r; }
+  }
+  return [t0, t1];
+}
+function anchorDistAt(n, px, py, tx, ty, ps) {
+  const dx = tx - px, dy = ty - py, L = Math.hypot(dx, dy) || 1, FAR = 900;
+  const hw = n.w / 2 * ps + 3, top = py + plateTop - 3, h = 34 * ps + 6;
+  const hit = clipSeg(px, py, px + dx / L * FAR, py + dy / L * FAR, [px - hw, top, px + hw, top + h]);
+  return Math.max(R + 9, hit ? hit[1] * FAR + 2 : 0);
+}
+// 一条连线在给定的两个端点位置下的走向和标签位置
+function edgeGeom(e, ax, ay, bx, by, ps) {
+  const mx = (ax + bx) / 2, my = (ay + by) / 2;
+  const dx = bx - ax, dy = by - ay, len = Math.hypot(dx, dy) || 1;
+  const cx = mx - dy / len * e.bend, cy = my + dx / len * e.bend;
+  const da = anchorDistAt(e.A, ax, ay, cx, cy, ps), db = anchorDistAt(e.B, bx, by, cx, cy, ps);
+  const ua = Math.hypot(cx - ax, cy - ay) || 1, ub = Math.hypot(cx - bx, cy - by) || 1;
+  const sx = ax + (cx - ax) / ua * da, sy = ay + (cy - ay) / ua * da;
+  const ex = bx + (cx - bx) / ub * db, ey = by + (cy - by) / ub * db;
+  return {sx, sy, cx, cy, ex, ey, lx:.25 * sx + .5 * cx + .25 * ex, ly:.25 * sy + .5 * cy + .25 * ey};
+}
+function placeEdge(e) {
+  const g = edgeGeom(e, e.A.x, e.A.y, e.B.x, e.B.y, PS);
+  const d = 'M' + g.sx.toFixed(1) + ' ' + g.sy.toFixed(1) + ' Q' + g.cx.toFixed(1) + ' ' + g.cy.toFixed(1) + ' ' + g.ex.toFixed(1) + ' ' + g.ey.toFixed(1);
+  e.line.setAttribute('d', d); e.hit.setAttribute('d', d);
+  e.geom = g;
+}
+// 连线上的标签：优先放在中点；中点被名牌或别的标签盖住时，沿着连线滑到最近的空位
+const T_CAND = [.5, .42, .58, .34, .66, .27, .73, .2, .8];
+function placeLabels() {
+  const vis = visNodes(), ps = PS, boxes = vis.map(n => boxAt(n, n.x, n.y, ps)), placed = [];
+  EDGES.forEach(e => {
+    if (!eVis(e) || !e.geom) { e.lx = null; return; }
+    const g = e.geom, lw = (parseFloat(e.rect.getAttribute('width')) || 70) * ps, lh = 22 * ps + 2;
+    let bx = g.lx, by = g.ly, ba = 1e9;
+    for (const t of T_CAND) {
+      const m = 1 - t, x = m * m * g.sx + 2 * m * t * g.cx + t * t * g.ex, y = m * m * g.sy + 2 * m * t * g.cy + t * t * g.ey;
+      const box = [x - lw / 2, y - lh / 2, x + lw / 2, y + lh / 2];
+      let a = Math.abs(t - .5) * 30;
+      for (const b of boxes) a += overlapArea(box, b);
+      for (const b of placed) a += overlapArea(box, b) * .6;
+      if (a < ba) { ba = a; bx = x; by = y; if (a < 1) break; }
+    }
+    placed.push([bx - lw / 2, by - lh / 2, bx + lw / 2, by + lh / 2]);
+    e.lx = e.lx == null ? bx : e.lx + (bx - e.lx) * .4; e.ly = e.ly == null ? by : e.ly + (by - e.ly) * .4;
+    e.lab.setAttribute('transform', 'translate(' + e.lx.toFixed(1) + ' ' + e.ly.toFixed(1) + ')');
+  });
+}
+function placeNode(n) { n.el.setAttribute('transform', 'translate(' + n.x.toFixed(1) + ' ' + n.y.toFixed(1) + ')'); }
+function setPS(v) {
+  PS = v;
+  NODES.forEach(n => n.plate.setAttribute('transform', 'translate(0 ' + plateTop + ') scale(' + v.toFixed(3) + ')'));
+  EDGES.forEach(e => e.li.setAttribute('transform', 'scale(' + v.toFixed(3) + ')'));
+}
+function measureNode(n) {
+  const a = n.plCn.getComputedTextLength() || n.short.length * 14.5, b = n.plRl.getComputedTextLength() || n.role.length * 10.5;
+  const w = Math.max(a + 22, b + 22, 66); n.w = w;
+  n.plBg.setAttribute('x', -w / 2 + 1); n.plBg.setAttribute('width', w);
+  n.plBar.setAttribute('x', -w / 2 + 1);
+}
+function styleEdge(e) {
+  const k = eKind(e), c = KINDS[k].c, dir = eDir(e);
+  [e.g, e.lab].forEach(el => el.style.setProperty('--c', c));
+  for (const cl of [...e.g.classList]) if (cl.startsWith('k-')) e.g.classList.remove(cl);
+  e.g.classList.add('k-' + k);
+  e.text.textContent = eVis(e) ? eLabel(e) : '';   // 没解锁的连线不留文字，避免被搜索或读屏读到
+  const w = e.text.getComputedTextLength() || eLabel(e).length * 12.5;
+  e.rect.setAttribute('x', -w / 2 - 9); e.rect.setAttribute('width', w + 18);
+  e.line.removeAttribute('marker-end'); e.line.removeAttribute('marker-start');
+  if (dir) e.line.setAttribute(dir === 'ab' ? 'marker-end' : 'marker-start', 'url(#ar-' + k + ')');
+}
+function styleNode(n) {
+  const b = nBadge(n);
+  n.badge.style.display = b ? 'block' : 'none';
+  if (b) {
+    n.badge.setAttribute('class', 'badge ' + b[2]);
+    n.badgeText.textContent = b[1];
+    const w = b[1].length * 11 + 14; n.badgeRect.setAttribute('x', -w / 2); n.badgeRect.setAttribute('width', w);
+  }
+  n.el.classList.toggle('isdead', !!(b && b[2] === 'dead'));
+}
+
+/* =====================================================================
+   镜头：目标值 + 缓动，拖动平移带惯性
+   ===================================================================== */
+const cam = {x:0, y:0, k:1}, tgt = {x:0, y:0, k:1};
+const camEase = .16;
+let panV = {x:0, y:0}, inertia = false;
+function applyCam() {
+  vp.setAttribute('transform', 'translate(' + cam.x.toFixed(2) + ' ' + cam.y.toFixed(2) + ') scale(' + cam.k.toFixed(4) + ')');
+  const ps = clamp(.8 / cam.k, 1, 1.2);
+  if (Math.abs(ps - PS) > .01) setPS(ps);
+  svg.classList.toggle('lo', cam.k < .62);
+}
+const isMobile = () => innerWidth < 900;
+function insets() {
+  const h = innerHeight, dockH = $('#dock').offsetHeight, open = !!(state.sel || state.selEdge);
+  if (isMobile()) return {l:10, r:10, t:70, b:dockH + 18 + (open ? Math.min(h * .46, 330) + 8 : 0)};
+  return {l:24, r:open ? 412 : 24, t:78, b:dockH + 40};
+}
+function fitTo(nodes, opt) {
+  opt = opt || {};
+  if (!nodes.length) return;
+  const I = insets();
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  nodes.forEach(n => { const hw = Math.max(R, n.w / 2) + 8; x0 = Math.min(x0, n.hx - hw); x1 = Math.max(x1, n.hx + hw); y0 = Math.min(y0, n.hy - R - 10); y1 = Math.max(y1, n.hy + plateTop + 40); });
+  const aw = innerWidth - I.l - I.r, ah = innerHeight - I.t - I.b;
+  const minK = opt.minK != null ? opt.minK : (isMobile() ? .56 : .3);
+  const k = clamp(Math.min(aw / (x1 - x0), ah / (y1 - y0)), minK, opt.maxK || 1.25);
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  tgt.k = k; tgt.x = I.l + aw / 2 - cx * k; tgt.y = I.t + ah / 2 - cy * k;
+  inertia = false;
+  if (opt.snap || REDUCE) { Object.assign(cam, tgt); applyCam(); }
+  wake();
+}
+const visNodes = () => NODES.filter(nVis);
+function fitAll(snap) { state.moved = false; fitTo(visNodes(), {snap, maxK:1.15}); }
+function focusCluster(ids) { const set = new Set(ids); fitTo(NODES.filter(n => set.has(n.id)), {minK:isMobile() ? .5 : .7, maxK:1.15}); }
+function clusterOf(id) {
+  const s = new Set([id]);
+  EDGES.forEach(e => { if (eOn(e) && (e.a === id || e.b === id)) { s.add(e.a); s.add(e.b); } });
+  return [...s];
+}
+function zoomDirect(cx, cy, f) {
+  const k = clamp(cam.k * f, .3, 3), r = k / cam.k;
+  cam.x = cx - (cx - cam.x) * r; cam.y = cy - (cy - cam.y) * r; cam.k = k;
+  Object.assign(tgt, cam); state.moved = true; applyCam();
+}
+function zoomTarget(cx, cy, f) {
+  const k = clamp(tgt.k * f, .3, 3), r = k / tgt.k;
+  tgt.x = cx - (cx - tgt.x) * r; tgt.y = cy - (cy - tgt.y) * r; tgt.k = k;
+  state.moved = true; inertia = false; wake();
+}
+const toWorld = (cx, cy) => ({x:(cx - cam.x) / cam.k, y:(cy - cam.y) / cam.k});
+
+/* =====================================================================
+   物理 + 渲染循环
+   参考 hub 关系图的做法：力导向（斥力、连线弹簧、名牌防重叠、速度阻尼）。
+   这里多加一个「回家」弹簧：拖动人物时，相连的人物跟着被拉动，松手后整张图弹回原来的位置。
+   没有动静时循环自动停下，不耗电。
+   ===================================================================== */
+const HOME_K = .012, EDGE_K = .022, DAMP = .87, VMAX = 14;
+let raf = 0, awake = false, lastT = 0;
+let drag = null, pinch = null;
+function wake() { if (!awake) { awake = true; lastT = performance.now(); raf = requestAnimationFrame(frame); } }
+function stepPhysics(dt) {
+  const vis = visNodes();
+  if (REDUCE) { let any = false; vis.forEach(n => { if (n.drag) { n.x = n.dx; n.y = n.dy; any = true; } }); return any; }
+  vis.forEach(n => { n.ax = (n.hx - n.x) * HOME_K; n.ay = (n.hy - n.y) * HOME_K; });
+  EDGES.forEach(e => {
+    if (!eVis(e)) return;
+    const a = e.A, b = e.B, dx = b.x - a.x, dy = b.y - a.y, d = Math.max(1, Math.hypot(dx, dy));
+    const L0 = Math.hypot(b.hx - a.hx, b.hy - a.hy), f = (d - L0) * EDGE_K, ux = dx / d, uy = dy / d;
+    a.ax += ux * f; a.ay += uy * f; b.ax -= ux * f; b.ay -= uy * f;
+  });
+  for (let i = 0; i < vis.length; i++) for (let j = i + 1; j < vis.length; j++) {
+    const a = vis[i], b = vis[j]; let dx = a.x - b.x, dy = a.y - b.y, d = Math.hypot(dx, dy);
+    if (d < .01) { d = .01; dx = 1; dy = 0; }
+    if (d < 280) { const f = Math.min(.4, 1400 / (d * d)); a.ax += dx / d * f; a.ay += dy / d * f; b.ax -= dx / d * f; b.ay -= dy / d * f; }
+    const needX = (a.w + b.w) / 2 + 12, needY = 108;
+    const ox = needX - Math.abs(dx), oy = needY - Math.abs(dy);
+    if (ox > 0 && oy > 0) {
+      if (ox <= oy) { const s = (dx < 0 ? -1 : 1) * ox * .06; a.ax += s; b.ax -= s; }
+      else { const s = (dy < 0 ? -1 : 1) * oy * .1; a.ay += s; b.ay -= s; }
+    }
+  }
+  let moving = false;
+  const damp = Math.pow(DAMP, dt);
+  vis.forEach(n => {
+    if (n.drag) { // 被手指拖着的人物：平滑跟手，同时记录速度，松手时带着惯性冲出去
+      const f = 1 - Math.pow(1 - .4, dt), ox = n.x, oy = n.y;
+      n.x += (n.dx - n.x) * f; n.y += (n.dy - n.y) * f;
+      n.vx = (n.x - ox) / dt; n.vy = (n.y - oy) / dt; moving = true; return;
+    }
+    n.vx = clamp((n.vx + n.ax * dt) * damp, -VMAX, VMAX); n.vy = clamp((n.vy + n.ay * dt) * damp, -VMAX, VMAX);
+    n.x += n.vx * dt; n.y += n.vy * dt;
+    if (Math.abs(n.vx) + Math.abs(n.vy) > .03 || Math.abs(n.hx - n.x) + Math.abs(n.hy - n.y) > .25) moving = true;
+  });
+  return moving;
+}
+function stepCamera(dt) {
+  if (inertia) {
+    const f = Math.pow(.92, dt);
+    panV.x *= f; panV.y *= f;
+    cam.x += panV.x * dt; cam.y += panV.y * dt; tgt.x = cam.x; tgt.y = cam.y;
+    if (Math.abs(panV.x) + Math.abs(panV.y) < .08) inertia = false;
+    return true;
+  }
+  const dx = tgt.x - cam.x, dy = tgt.y - cam.y, dk = tgt.k - cam.k;
+  if (Math.abs(dx) < .15 && Math.abs(dy) < .15 && Math.abs(dk) < .0008) { if (dx || dy || dk) { cam.x = tgt.x; cam.y = tgt.y; cam.k = tgt.k; } return false; }
+  const f = 1 - Math.pow(1 - camEase, dt);
+  cam.x += dx * f; cam.y += dy * f; cam.k += dk * f;
+  return true;
+}
+function render() {
+  NODES.forEach(n => { if (nVis(n)) placeNode(n); });
+  EDGES.forEach(e => { if (eVis(e)) placeEdge(e); });
+  placeLabels();
+  applyCam();
+}
+function frame(now) {
+  const dt = Math.min(2.5, (now - lastT) / 16.667); lastT = now;
+  const a = stepPhysics(dt), b = stepCamera(dt);
+  render();
+  if (a || b || drag || pinch) raf = requestAnimationFrame(frame); else awake = false;
+}
+
+/* =====================================================================
+   显示状态
+   ===================================================================== */
+function refresh() {
+  const fn = state.hoverNode || (!state.hoverEdge ? state.sel : null);
+  const fe = state.hoverEdge || (!state.hoverNode ? state.selEdge : null);
+  const nHL = new Set(), eHL = new Set(); let focusing = false;
+  if (fn) { focusing = true; nHL.add(fn); EDGES.forEach(e => { if (eOn(e) && (e.a === fn || e.b === fn)) { eHL.add(e.id); nHL.add(e.a); nHL.add(e.b); } }); }
+  else if (fe) { focusing = true; eHL.add(fe); nHL.add(edgeById[fe].a); nHL.add(edgeById[fe].b); }
+  NODES.forEach(n => {
+    const c = n.el.classList;
+    c.toggle('locked', !nVis(n));
+    c.toggle('dim', focusing && !nHL.has(n.id));
+    c.toggle('hl', focusing && nHL.has(n.id));
+    c.toggle('sel', state.sel === n.id);
+    c.toggle('fresh', nVis(n) && nFresh(n));
+  });
+  EDGES.forEach(e => {
+    const on = eOn(e), dim = focusing && !eHL.has(e.id), hl = focusing && eHL.has(e.id), sel = state.selEdge === e.id;
+    [e.g, e.lab].forEach(el => {
+      const c = el.classList;
+      c.toggle('off', !on); c.toggle('dim', on && dim); c.toggle('hl', on && hl); c.toggle('sel', on && sel);
+    });
+    e.lab.classList.toggle('fresh', on && state.freshEdges.has(e.id));
+  });
+}
+
+/* =====================================================================
+   卡片内容
+   ===================================================================== */
+const monoHex = (n, w) => '<svg width="' + w + '" height="' + (w * .9).toFixed(0) + '" viewBox="-42 -38 84 76" style="flex:none"><polygon points="' + hex(38) +
+  '" fill="url(#hatch-' + n.g + ')" stroke="' + GROUPS[n.g].c + '" stroke-width="3"/><polygon points="' + hex(31) + '" fill="rgba(8,9,11,.55)" stroke="#fff" stroke-opacity=".16"/>' +
+  (n.img ? '<image href="' + n.img + '" x="-38" y="-38" width="76" height="76" preserveAspectRatio="xMidYMid slice" clip-path="url(#hexclip)"/>'
+         : '<text x="0" y="2" fill="#fff" font-size="34" font-weight="800" text-anchor="middle" dominant-baseline="central">' + n.mono + '</text>') + '</svg>';
+const notesHtml = arr => arr.filter(x => x[0] <= state.stage).map(x => '<p class="note' + (x[0] === state.stage ? ' fresh' : '') + '">' + x[1] + '</p>').join('');
+
+function relRows(n) {
+  return EDGES.filter(e => eOn(e) && (e.a === n.id || e.b === n.id)).map(e => {
+    const o = e.a === n.id ? e.B : e.A, dir = eDir(e);
+    const out = dir && ((dir === 'ab') === (e.a === n.id));
+    const ar = dir ? (out ? '→ ' : '← ') : '';
+    return '<button class="rel" data-edge="' + e.id + '" style="--c:' + KINDS[eKind(e)].c + '"><span class="bar"></span><span class="nm"><span class="ar">' + ar + '</span>' + o.short + '<small>' + o.role + '</small></span><span class="lb">' + eLabel(e) + '</span></button>';
+  });
+}
+function nodeView(n) {
+  const rows = relRows(n), b = nBadge(n);
+  const chips = '<span class="chip" style="--c:' + GROUPS[n.g].c + '">' + GROUPS[n.g].name + '</span>' +
+    (n.nick ? '<span class="chip nick">昵称 · ' + n.nick + '</span>' : '') +
+    (b ? '<span class="chip" style="--c:' + (b[2] === 'killer' ? '#ff4d5e' : b[2] === 'sus' ? '#ff9f43' : '#caced6') + '">' + b[1] + '</span>' : '');
+  return '<button class="xbtn" type="button" data-act="close" style="position:absolute;right:14px;top:0;z-index:2" aria-label="关闭">×</button>' +
+    '<div class="who">' + monoHex(n, 70) + '<div><h2>' + n.full + '</h2><div class="en">' + n.en + '</div></div></div>' +
+    '<div class="chips">' + chips + '</div>' +
+    '<p class="alt">身份：' + n.role + (n.alt && n.alt.length ? '　·　别的译本可能写作：' + n.alt.slice(0, 4).join('、') : '') + '</p>' +
+    '<h3 class="sec"><span>到目前为止</span></h3>' + notesHtml(n.notes) +
+    '<h3 class="sec"><span>和谁有关</span><b>' + rows.length + '</b></h3>' + (rows.join('') || '<p class="note">暂时还没有和别人的关系。</p>');
+}
+function edgeView(e) {
+  const k = eKind(e), c = KINDS[k].c, dir = eDir(e);
+  const dirChip = dir ? '<span class="chip">' + (dir === 'ab' ? e.A.short + ' → ' + e.B.short : e.B.short + ' → ' + e.A.short) + '</span>' : '';
+  return '<button class="xbtn" type="button" data-act="close" style="position:absolute;right:14px;top:0;z-index:2" aria-label="关闭">×</button>' +
+    (state.prev ? '<button class="back" data-act="back">‹ 返回</button>' : '') +
+    '<div class="pair"><button class="pn" data-node="' + e.a + '">' + monoHex(e.A, 56) + e.A.short + '</button>' +
+    '<div class="mid ' + k + '" style="--c:' + c + '"><span class="lab">' + eLabel(e) + '</span><span class="ln"></span></div>' +
+    '<button class="pn" data-node="' + e.b + '">' + monoHex(e.B, 56) + e.B.short + '</button></div>' +
+    '<div class="chips"><span class="chip" style="--c:' + c + '">' + KINDS[k].name + '</span>' + dirChip + '</div>' +
+    '<h3 class="sec"><span>这条关系</span></h3>' + notesHtml(e.notes);
+}
+function renderDetail() {
+  const d = $('#detail'), open = !!(state.sel || state.selEdge);
+  if (state.selEdge) $('#dbody').innerHTML = edgeView(edgeById[state.selEdge]);
+  else if (state.sel) $('#dbody').innerHTML = nodeView(nodeById[state.sel]);
+  $('#dbody').scrollTop = 0;
+  d.classList.toggle('open', open);
+  if (!open) d.classList.remove('tall');
+}
+
+/* ---------- 进度 ---------- */
+function renderProgress() {
+  const s = state.stage, last = s >= N_STAGES;
+  $('#progRing').textContent = s + '/' + N_STAGES;
+  $('#progHint').textContent = last ? '已解锁全部' : '解锁新剧情';
+  $('#progSub').textContent = '第 ' + s + ' / ' + N_STAGES + ' 步';
+  let h = '<p class="lead">只显示你读到的部分。读到新的剧情，点下面的按钮解锁，不会提前剧透。</p><ol class="tl">';
+  for (let i = 0; i < s; i++) {
+    h += '<li class="done' + (i === s - 1 ? ' cur' : '') + '"><span class="dot">' + (i + 1) + '</span><b>' + STAGES[i].t + '</b><span class="r">' + STAGES[i].r + '</span></li>';
+  }
+  if (!last) h += '<li class="next"><span class="dot">' + (s + 1) + '</span><b>下一段　？？？</b><span class="r">读到新的情节，再回来点这里。</span><button class="btn primary" type="button" data-act="next">我读到下一段了</button></li>';
+  h += '</ol><div class="mini">' +
+    (s > 1 ? '<button class="linkbtn" type="button" data-act="prev">点错了，回退一步</button>' : '') +
+    (!last ? '<button class="linkbtn" type="button" data-act="all">我已读完，全部解锁</button>' : '') +
+    (s > 1 ? '<button class="linkbtn" type="button" data-act="reset">从头开始</button>' : '') + '</div>';
+  $('#progBody').innerHTML = h;
+}
+
+/* ---------- 人物速查 ---------- */
+const norm = s => String(s).toLowerCase().replace(/[\s·・.。,，\-—（）()“”"']/g, '');
+function renderPeople() {
+  const q = norm($('#q').value), vis = visNodes();
+  $('#pplSub').textContent = '已出场 ' + vis.length + ' 人';
+  let h = '', total = 0;
+  for (const g in GROUPS) {
+    const list = vis.filter(n => n.g === g && (!q || norm([n.short, n.full, n.en, n.role, n.nick || '', ...(n.alt || [])].join('|')).includes(q)));
+    if (!list.length) continue;
+    total += list.length;
+    h += '<div class="gh" style="--c:' + GROUPS[g].c + '">' + GROUPS[g].name + '</div>';
+    list.forEach(n => {
+      const full = n.nick ? n.full.replace('（' + n.nick + '）', '（<u>' + n.nick + '</u>）') : n.full;
+      h += '<button class="prow" data-pick="' + n.id + '">' + monoHex(n, 44) + '<span class="t"><b>' + n.short + '</b><i>' + n.role + '　' + full + '</i></span>' + (nFresh(n) ? '<span class="new">NEW</span>' : '') + '</button>';
+    });
+  }
+  $('#pplList').innerHTML = total ? h : '<p class="empty">没有找到。也可能这个人还没出场，读到后会自动出现。</p>';
+}
+
+/* ---------- 图例 ---------- */
+function renderLegend() {
+  const cnt = {}, groups = new Set();
+  EDGES.filter(eVis).forEach(e => { const k = eKind(e); cnt[k] = (cnt[k] || 0) + 1; });
+  visNodes().forEach(n => groups.add(n.g));
+  $('#kindList').innerHTML = Object.keys(KINDS).filter(k => cnt[k]).map(k =>
+    '<button class="krow" data-k="' + k + '" aria-pressed="' + !state.hidden.has(k) + '" style="--c:' + KINDS[k].c + '"><span class="sw"></span><span><b>' + KINDS[k].name + '</b><i>' + KINDS[k].eg + '</i></span><span class="st">' + cnt[k] + ' 条</span></button>').join('');
+  $('#groupList').innerHTML = Object.keys(GROUPS).filter(g => groups.has(g)).map(g => '<div class="grow" style="--c:' + GROUPS[g].c + '">' + GROUPS[g].name + '</div>').join('');
+}
+
+/* =====================================================================
+   选中、弹层、解锁
+   ===================================================================== */
+/* =====================================================================
+   拖完之后：人物留在松手的地方，只做必要的微调，保证没有名牌或连线标签被盖住
+   ===================================================================== */
+const LAYOUT_V = 1;
+function loadLayout() {
+  try {
+    const o = JSON.parse(store.get('nile.pos', 'null'));
+    if (o && o.v === LAYOUT_V) for (const id in o.p) { const n = nodeById[id]; if (n) { n.hx = o.p[id][0]; n.hy = o.p[id][1]; } }
+  } catch (_) {}
+}
+function saveLayout() {
+  const p = {};
+  NODES.forEach(n => { if (Math.abs(n.hx - n.ox) + Math.abs(n.hy - n.oy) > 1) p[n.id] = [Math.round(n.hx), Math.round(n.hy)]; });
+  store.set('nile.pos', Object.keys(p).length ? JSON.stringify({v:LAYOUT_V, p}) : '');
+}
+// 人物（六边形加名牌）占的矩形
+const boxAt = (n, x, y, ps) => { const hw = Math.max(R, n.w / 2 * ps) + 4; return [x - hw, y - R * .87 - 4, x + hw, y + plateTop + 34 * ps + 4]; };
+const overlapArea = (a, b) => { const w = Math.min(a[2], b[2]) - Math.max(a[0], b[0]), h = Math.min(a[3], b[3]) - Math.max(a[1], b[1]); return w > 0 && h > 0 ? w * h : 0; };
+// 把 n 放在 (x,y) 时，文字被盖住的程度。hard：人物框互相压住；short：和它相连的线太短，放不下标签（标签会被名牌盖住）。
+// 别人按「回家后」的位置算，因为他们被拉开只是暂时的
+function coverPenalty(n, x, y, ps, labels) {
+  const vis = visNodes(), at = m => m === n ? [x, y] : [m.hx, m.hy];
+  const mine = boxAt(n, x, y, ps);
+  let hard = 0, short = 0;
+  vis.forEach(m => { if (m !== n) { const q = at(m), o = overlapArea(mine, boxAt(m, q[0], q[1], ps)); if (o) hard += 400 + o; } });
+  if (labels) EDGES.forEach(e => {
+    if (!eVis(e) || (e.A !== n && e.B !== n)) return;
+    const a = at(e.A), b = at(e.B), g = edgeGeom(e, a[0], a[1], b[0], b[1], ps);
+    const lw = (parseFloat(e.rect.getAttribute('width')) || 70) * ps + 12;
+    short += Math.max(0, lw - Math.hypot(g.ex - g.sx, g.ey - g.sy));
+  });
+  return {hard, lab:short};
+}
+// 从松手的位置 (x,y) 出发找一个「稍加调整」的位置：人物框压在一起重罚，线太短放不下标签轻罚，挪得越远罚得越多
+function settleNode(n, x, y, ps, labels) {
+  const MOVE = 14, MAXR = 130;
+  const score = (px, py) => { const c = coverPenalty(n, px, py, ps, labels); return c.hard * 50 + c.lab * 9 + MOVE * Math.hypot(px - x, py - y); };
+  let best = [x, y], bs = score(x, y);
+  if (bs === 0) return best;
+  for (let r = 8; r <= MAXR && r * MOVE < bs; r += 8) {
+    const steps = Math.max(12, Math.round(r / 4));
+    for (let i = 0; i < steps; i++) {
+      const ang = i / steps * Math.PI * 2, px = x + Math.cos(ang) * r, py = y + Math.sin(ang) * r;
+      const sc = score(px, py);
+      if (sc < bs) { bs = sc; best = [px, py]; }
+    }
+  }
+  return best;
+}
+function dropNode(n) {
+  const x = n.dx != null ? n.dx : n.x, y = n.dy != null ? n.dy : n.y;
+  const p = settleNode(n, x, y, Math.max(1, PS), true);
+  n.hx = p[0]; n.hy = p[1]; n.dx = n.dy = null;
+  if (REDUCE) { n.x = n.hx; n.y = n.hy; }
+  saveLayout();
+}
+function resetLayout() {
+  NODES.forEach(n => { n.hx = n.ox; n.hy = n.oy; });
+  saveLayout(); fitAll(); wake();
+}
+
+function select(sel, push) {
+  state.prev = push ? (state.selEdge ? {edge:state.selEdge} : state.sel ? {node:state.sel} : null) : null;
+  state.sel = sel && sel.node || null; state.selEdge = sel && sel.edge || null;
+  state.hoverNode = state.hoverEdge = null;
+  if (state.sel && !state.seen.has(state.sel)) { state.seen.add(state.sel); saveSeen(); }
+  renderDetail(); refresh();
+  if (state.sel) focusCluster(clusterOf(state.sel));
+  else if (state.selEdge) focusCluster([edgeById[state.selEdge].a, edgeById[state.selEdge].b]);
+}
+const selectNode = (id, push) => select({node:id}, push);
+const selectEdge = (id, push) => select({edge:id}, push);
+const clearSel = () => { if (state.sel || state.selEdge) { select(null, false); fitAll(); } };
+
+let modalId = null;
+function openModal(id) {
+  closeModal();
+  modalId = id; $(id).classList.add('open'); $('#backdrop').classList.add('on');
+  if (id === '#mProg') renderProgress();
+  if (id === '#mPeople') renderPeople();
+  if (id === '#mLegend') renderLegend();
+}
+function closeModal() {
+  if (!modalId) return;
+  $(modalId).classList.remove('open'); $('#backdrop').classList.remove('on'); modalId = null; state.catchUp = false;
+}
+let toastT = 0;
+function toast(msg, sub) { const t = $('#toast'); t.textContent = msg; if (sub) { const sm = document.createElement('small'); sm.textContent = sub; t.appendChild(sm); } t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 3800); }
+let dlgYes = null;
+function ask(title, text, yes, yesText, noText) {
+  $('#dlgT').textContent = title; $('#dlgP').textContent = text;
+  $('#dlgYes').textContent = yesText || '读到了'; $('#dlgNo').textContent = noText || '还没有';
+  dlgYes = yes; $('#dlg').classList.add('open'); $('#backdrop').classList.add('on');
+}
+function closeDlg() { $('#dlg').classList.remove('open'); if (!modalId) $('#backdrop').classList.remove('on'); dlgYes = null; }
+
+function setStage(n, opt) {
+  opt = opt || {};
+  const old = state.stage, s = clamp(n, 1, N_STAGES);
+  if (s === old && !opt.force) return;
+  state.stage = s; store.set('nile.stage', String(s));
+  // 新出场的人物：从已经在场的相邻人物身边「长出来」
+  const born = NODES.filter(x => x.from > old && x.from <= s);
+  born.forEach(x => {
+    let p = null;
+    EDGES.forEach(e => { if (!p && e.from <= s && (e.a === x.id || e.b === x.id)) { const o = e.a === x.id ? e.B : e.A; if (o.from <= old && o.from >= 1) p = o; } });
+    if (!opt.snap && p) { x.x = p.x + (Math.random() - .5) * 6; x.y = p.y + (Math.random() - .5) * 6; } else { x.x = x.hx; x.y = x.hy; }
+    x.vx = x.vy = 0; placeNode(x);
+  });
+  const fresh = new Set();
+  if (s > old && old > 0) EDGES.forEach(e => { if (eVis(e) && (e.from > old || eSt(e)[0] > old)) fresh.add(e.id); });
+  state.freshEdges = fresh;
+  if (state.selEdge && !eVis(edgeById[state.selEdge])) state.selEdge = null;
+  if (state.sel && !nVis(nodeById[state.sel])) state.sel = null;
+  if (!state.sel && !state.selEdge) state.prev = null;
+  refresh();                                   // 先把新人物显示出来，才能量出文字宽度
+  NODES.forEach(x => { styleNode(x); if (nVis(x)) measureNode(x); });
+  EDGES.forEach(e => { styleEdge(e); if (eVis(e)) placeEdge(e); });
+  placeLabels();
+  let nudged = false;
+  born.forEach(x => {
+    const q = settleNode(x, x.hx, x.hy, 1, !opt.snap);   // 刚打开页面时只处理人物框重叠，不动原本排好的布局
+    if (q[0] !== x.hx || q[1] !== x.hy) { x.hx = q[0]; x.hy = q[1]; if (opt.snap) { x.x = q[0]; x.y = q[1]; placeNode(x); } nudged = true; }
+  });
+  if (nudged) saveLayout();
+  born.forEach(x => { if (!opt.snap && old > 0) { x.el.classList.remove('enter'); void x.el.getBoundingClientRect(); x.el.classList.add('enter'); setTimeout(() => x.el.classList.remove('enter'), 900); } });
+  renderProgress(); renderDetail(); renderPeople(); renderLegend(); refresh();
+  fitAll(!!opt.snap);
+  wake();
+  if (!opt.silent && s > old) {
+    const names = born.map(x => x.short);
+    toast('已解锁：' + STAGES[s - 1].t, names.length ? '新增人物：' + names.join('、') : '');
+    if (navigator.vibrate) { try { navigator.vibrate(14); } catch (_) {} }
+  }
+}
+function askNext() {
+  if (state.stage >= N_STAGES) return;
+  const nx = STAGES[state.stage];
+  ask('解锁「' + nx.t + '」？', '这会显示这一段里出现的人物和关系。你已经读到这里了吗？', () => {
+    const keep = state.catchUp;
+    if (!keep) closeModal();                   // 平时解锁完直接回到图上，看新人物长出来
+    setStage(state.stage + 1);
+    if (keep) state.catchUp = true;            // 补进度时留在弹层里，方便连续解锁
+  });
+}
+
+/* =====================================================================
+   指针交互：拖人物（弹性）、拖画布（惯性）、双指缩放
+   ===================================================================== */
+const pts = new Map();
+const pdist = () => { const [a, b] = [...pts.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+const pmid = () => { const [a, b] = [...pts.values()]; return {x:(a.x + b.x) / 2, y:(a.y + b.y) / 2}; };
+svg.addEventListener('pointerdown', ev => {
+  if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+  try { svg.setPointerCapture(ev.pointerId); } catch (_) {}
+  pts.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+  if (pts.size === 2) { const m = pmid(); pinch = {d:pdist(), mx:m.x, my:m.y}; if (drag && drag.n) drag.n.drag = false; drag = null; return; }
+  const nEl = ev.target.closest('.node'), eEl = ev.target.closest('.edge,.elabel');
+  const n = nEl ? nodeById[nEl.dataset.id] : null;
+  drag = {type:n ? 'node' : 'pan', n, eid:!n && eEl ? eEl.dataset.id : null, sx:ev.clientX, sy:ev.clientY, cx:cam.x, cy:cam.y, moved:false, lx:ev.clientX, ly:ev.clientY, lt:performance.now(), vx:0, vy:0};
+  inertia = false; panV.x = panV.y = 0;
+  if (n) { const w = toWorld(ev.clientX, ev.clientY); drag.ox = n.x - w.x; drag.oy = n.y - w.y; }
+  wake();
+});
+window.addEventListener('pointermove', ev => {
+  if (!pts.has(ev.pointerId)) return;
+  pts.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+  if (pts.size === 2 && pinch) {
+    const m = pmid(), d = pdist();
+    cam.x += m.x - pinch.mx; cam.y += m.y - pinch.my; Object.assign(tgt, cam);
+    zoomDirect(m.x, m.y, d / pinch.d);
+    pinch.d = d; pinch.mx = m.x; pinch.my = m.y; wake(); return;
+  }
+  if (!drag) return;
+  const dx = ev.clientX - drag.sx, dy = ev.clientY - drag.sy;
+  if (!drag.moved && Math.hypot(dx, dy) > 6) { drag.moved = true; if (drag.type === 'pan') svg.classList.add('panning'); if (drag.n) drag.n.drag = true; }
+  if (!drag.moved) return;
+  state.moved = true;
+  if (drag.type === 'pan') {
+    const now = performance.now(), dtm = Math.max(1, now - drag.lt);
+    drag.vx = drag.vx * .6 + ((ev.clientX - drag.lx) / dtm * 16.667) * .4; drag.vy = drag.vy * .6 + ((ev.clientY - drag.ly) / dtm * 16.667) * .4;
+    drag.lx = ev.clientX; drag.ly = ev.clientY; drag.lt = now;
+    cam.x = drag.cx + dx; cam.y = drag.cy + dy; Object.assign(tgt, cam);
+    applyCam();
+  } else {
+    const w = toWorld(ev.clientX, ev.clientY); drag.n.dx = w.x + drag.ox; drag.n.dy = w.y + drag.oy;
+  }
+  wake();
+});
+function endPointer(ev, cancelled) {
+  pts.delete(ev.pointerId);
+  if (pts.size < 2) pinch = null;
+  if (!drag) return;
+  const d = drag; drag = null; svg.classList.remove('panning');
+  if (d.n) d.n.drag = false;
+  if (ev.pointerType !== 'mouse') state.hoverNode = state.hoverEdge = null;
+  if (d.moved || cancelled) {
+    if (d.type === 'pan' && !cancelled && !REDUCE && performance.now() - d.lt < 90 && Math.hypot(d.vx, d.vy) > .6) { panV.x = d.vx; panV.y = d.vy; inertia = true; }
+    if (d.n && d.moved && !cancelled) dropNode(d.n);   // 留在松手的地方，只微调到不盖字
+    refresh(); wake(); return;
+  }
+  if (d.type === 'node') selectNode(d.n.id, false);
+  else if (d.eid) selectEdge(d.eid, false);
+  else clearSel();
+  wake();
+}
+window.addEventListener('pointerup', ev => endPointer(ev, false));
+window.addEventListener('pointercancel', ev => endPointer(ev, true));
+svg.addEventListener('wheel', ev => {
+  ev.preventDefault();
+  const f = ev.ctrlKey ? Math.exp(-ev.deltaY * .01) : Math.exp(-ev.deltaY * .0016);
+  zoomTarget(ev.clientX, ev.clientY, f);
+}, {passive:false});
+svg.addEventListener('pointerover', ev => {
+  if (drag || ev.pointerType !== 'mouse') return;
+  const n = ev.target.closest('.node'), e = ev.target.closest('.edge,.elabel');
+  const nid = n ? n.dataset.id : null, eid = !n && e ? e.dataset.id : null;
+  if (nid !== state.hoverNode || eid !== state.hoverEdge) { state.hoverNode = nid; state.hoverEdge = eid; refresh(); }
+});
+svg.addEventListener('pointerleave', () => { if (state.hoverNode || state.hoverEdge) { state.hoverNode = state.hoverEdge = null; refresh(); } });
+
+/* =====================================================================
+   按钮
+   ===================================================================== */
+$('#btnProg').addEventListener('click', () => { $('#btnProg').classList.remove('pulse'); openModal('#mProg'); });
+$('#btnPeople').addEventListener('click', () => { $('#q').value = ''; openModal('#mPeople'); });
+$('#btnLegend').addEventListener('click', () => openModal('#mLegend'));
+$('#btnFit').addEventListener('click', () => fitAll());
+$('#helpBtn').addEventListener('click', () => openModal('#mIntro'));
+$('#backdrop').addEventListener('click', () => { if ($('#dlg').classList.contains('open')) closeDlg(); else closeModal(); });
+document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => closeModal()));
+$('#resetPos').addEventListener('click', () => { resetLayout(); closeModal(); toast('已摆回原位'); });
+$('#grab').addEventListener('click', () => $('#detail').classList.toggle('tall'));
+$('#dlgNo').addEventListener('click', closeDlg);
+$('#dlgYes').addEventListener('click', () => { const f = dlgYes; closeDlg(); if (f) f(); });
+$('#q').addEventListener('input', renderPeople);
+$('#introStart').addEventListener('click', () => { store.set('nile.intro', '1'); closeModal(); });
+$('#introCatch').addEventListener('click', () => { store.set('nile.intro', '1'); openModal('#mProg'); state.catchUp = true; });
+$('#dbody').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-edge],[data-node],[data-act]'); if (!b) return;
+  if (b.dataset.edge) selectEdge(b.dataset.edge, true);
+  else if (b.dataset.node) selectNode(b.dataset.node, true);
+  else if (b.dataset.act === 'back') select(state.prev, false);
+  else if (b.dataset.act === 'close') clearSel();
+});
+$('#progBody').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-act]'); if (!b) return;
+  const a = b.dataset.act;
+  if (a === 'next') askNext();
+  else if (a === 'prev') setStage(state.stage - 1, {silent:true});
+  else if (a === 'all') ask('全部解锁？', '会显示所有人物、凶手和结局。确认你已经读完了。', () => { closeModal(); setStage(N_STAGES); }, '已读完，解锁', '再想想');
+  else if (a === 'reset') ask('从头开始？', '会回到第 1 步，已经解锁的内容会重新隐藏。', () => { setStage(1, {silent:true}); }, '从头开始', '取消');
+});
+$('#pplList').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-pick]'); if (!b) return;
+  closeModal(); selectNode(b.dataset.pick, false);
+});
+$('#kindList').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-k]'); if (!b) return;
+  state.hidden.has(b.dataset.k) ? state.hidden.delete(b.dataset.k) : state.hidden.add(b.dataset.k);
+  renderLegend(); refresh();
+});
+window.addEventListener('keydown', ev => { if (ev.key === 'Escape') { if ($('#dlg').classList.contains('open')) closeDlg(); else if (modalId) closeModal(); else clearSel(); } });
+let rsT = 0;
+window.addEventListener('resize', () => { clearTimeout(rsT); rsT = setTimeout(() => { if (!state.moved) fitAll(); }, 120); });
+
+/* =====================================================================
+   启动：读取上次的进度。
+   发给她之前，可以在链接末尾加 #p=7，直接定位到第 7 步。
+   ===================================================================== */
+(function init() {
+  setPS(1);   // 名牌要先放到六边形下方，否则放大到 1 倍时名牌会盖住头像
+  let s = parseInt(store.get('nile.stage', '1'), 10) || 1;
+  const m = /[#?&]p=(\d+)/.exec(location.hash + location.search);
+  if (m) { s = parseInt(m[1], 10); store.set('nile.stage', String(clamp(s, 1, N_STAGES))); }
+  state.stage = 0;
+  loadLayout();
+  NODES.forEach(n => { n.x = n.hx; n.y = n.hy; });
+  setStage(clamp(s, 1, N_STAGES), {snap:true, silent:true, force:true});
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { NODES.forEach(n => { if (nVis(n)) measureNode(n); }); EDGES.forEach(e => styleEdge(e)); EDGES.forEach(e => { if (eVis(e)) placeEdge(e); }); placeLabels(); fitAll(true); wake(); });
+  if (/MicroMessenger/i.test(navigator.userAgent)) $('#tipText').textContent = '你现在是在微信里打开的，进度可能会被清掉，也加不到桌面。点右上角「···」，选「在浏览器打开」，用 Safari 打开后，点底部的分享按钮，选「添加到主屏幕」。';
+  if (store.get('nile.intro', '') !== '1') setTimeout(() => openModal('#mIntro'), 350);
+  else if (state.stage === 1) $('#btnProg').classList.add('pulse');
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+})();
+</script>
+</body>
+</html>
